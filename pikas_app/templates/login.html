@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -143,6 +144,14 @@
         .form-input:focus + .form-icon,
         .form-input-wrapper:focus-within .form-icon { color: #a855f7; }
 
+        .form-input:-webkit-autofill,
+        .form-input:-webkit-autofill:hover, 
+        .form-input:-webkit-autofill:focus {
+            -webkit-box-shadow: 0 0 0px 1000px #0f172a inset !important;
+            -webkit-text-fill-color: #f1f5f9 !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
         /* Submit Button */
         .btn-submit {
             width: 100%; padding: 14px;
@@ -201,6 +210,7 @@
 
     <div class="glass-card">
         <div style="text-align:center; margin-bottom: 36px;">
+            <img src="{% static 'img/pikas-logo.png' %}" alt="Logo" style="width:80px; height:80px; object-fit:contain; margin-bottom:12px;">
             <div class="logo-text">PIKAS</div>
             <div class="logo-sub">Performance Indicators Knowledgebase<br>Accountability System</div>
         </div>

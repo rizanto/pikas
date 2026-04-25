@@ -42,7 +42,9 @@ def fetch_folder_contents(url: str) -> list:
         results = service.files().list(
             q=query,
             fields="files(id, name, mimeType, modifiedTime, size)",
-            pageSize=100
+            pageSize=100,
+            supportsAllDrives=True,
+            includeItemsFromAllDrives=True
         ).execute()
         
         items = results.get('files', [])

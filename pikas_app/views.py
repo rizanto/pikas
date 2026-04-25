@@ -288,8 +288,8 @@ def api_periode_config(request, periode_id):
                         'jenis_persen': to_bool(iku_def.get('jenis_persen', iku_def.get('cells', {}).get('jenis_persen', True))),
                         'satuan': iku_def.get('satuan', iku_def.get('cells', {}).get('satuan', '')),
                         'has_proxy': any(str(v).strip() for k, v in iku_def.get('cells', {}).items() if k.startswith('proksi_')),
-                        'proxy_x_label': iku_def.get('proksi_x_label', iku_def.get('cells', {}).get('proksi_x_label', iku_def.get('proxy_x_label', ''))),
-                        'proxy_y_label': iku_def.get('proksi_y_label', iku_def.get('cells', {}).get('proksi_y_label', iku_def.get('proxy_y_label', ''))),
+                        'proxy_x_label': iku_def.get('proksi_x', iku_def.get('cells', {}).get('proksi_x', '')),
+                        'proxy_y_label': iku_def.get('proksi_y', iku_def.get('cells', {}).get('proksi_y', '')),
                         'cells': iku_def.get('cells', {}),
                     }
                 )

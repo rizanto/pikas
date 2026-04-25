@@ -122,8 +122,8 @@ def pull_periode_data(gsheet_id, periode):
             'jenis_iku': cells.get('jenis_iku'),
             'jenis_periode': cells.get('jenis_periode'),
             'jenis_persen': cells.get('jenis_persen'),
-            'proxy_x_label': cells.get('proxy_x_label'),
-            'proxy_y_label': cells.get('proxy_y_label'),
+            'proxy_x_label': cells.get('proksi_x'),
+            'proxy_y_label': cells.get('proksi_y'),
         }
         
         for field, cell_coord in meta_map.items():
