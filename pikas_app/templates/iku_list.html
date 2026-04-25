@@ -1,0 +1,68 @@
+{% extends 'crm_base.html' %}
+{% block title %}IKU Workspace — PIKAS{% endblock %}
+{% block header_title %}Workspace IKU{% endblock %}
+
+{% block content %}
+{% if error %}
+<div style="display:flex;align-items:center;justify-content:center;height:60vh;">
+    <div class="glass-card" style="text-align:center;padding:48px;max-width:480px;">
+        <svg width="48" height="48" fill="none" stroke="#f59e0b" viewBox="0 0 24 24" style="margin:0 auto 16px;display:block;opacity:0.7"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+        <h3 style="font-size:18px;font-weight:800;color:white;margin-bottom:8px;">{{ error }}</h3>
+    </div>
+</div>
+{% else %}
+<div style="margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;">
+    <div>
+        <h1 style="font-size:26px;font-weight:900;color:white;">Kertas Kerja Anda</h1>
+        <p style="color:#94a3b8;font-size:14px;font-weight:600;margin-top:4px;">Lengkapi realisasi, kendala, solusi, dan RTL pada periode berjalan.</p>
+    </div>
+    <span style="font-size:11px;font-weight:700;color:#a855f7;background:rgba(168,85,247,0.1);padding:6px 14px;border-radius:20px;border:1px solid rgba(168,85,247,0.15);">Periode {{ periode.label }}</span>
+</div>
+
+<div class="glass-card" style="overflow:hidden;">
+    <div style="padding:16px 20px;border-bottom:1px solid rgba(148,163,184,0.06);display:flex;justify-content:space-between;align-items:center;">
+        <h3 style="font-size:15px;font-weight:800;color:white;">Daftar Tugas IKU</h3>
+        <div style="position:relative;">
+            <input type="text" id="ikuSearch" class="pikas-input" style="padding-left:32px;width:240px;font-size:12px;" placeholder="Cari kode atau nama IKU..." oninput="filterIku()">
+            <svg width="14" height="14" fill="none" stroke="#475569" viewBox="0 0 24 24" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
+    </div>
+    <div style="max-height:70vh;overflow-y:auto;">
+        {% for entry in entries %}
+        <div class="iku-row" data-search="{{ entry.iku.kode_indikator|lower }} {{ entry.iku.indikator|lower }}" style="padding:16px 20px;border-bottom:1px solid rgba(148,163,184,0.04);display:flex;align-items:center;gap:16px;transition:background 0.15s;" onmouseover="this.style.background='rgba(148,163,184,0.03)'" onmouseout="this.style.background='transparent'">
+            <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
+                    <span style="font-size:12px;font-weight:800;color:#a855f7;background:rgba(168,85,247,0.1);padding:2px 8px;border-radius:5px;border:1px solid rgba(168,85,247,0.15);">{{ entry.iku.kode_indikator }}</span>
+                    {% if entry.is_done %}<span style="font-size:10px;font-weight:800;color:#22c55e;background:rgba(34,197,94,0.1);padding:2px 8px;border-radius:5px;border:1px solid rgba(34,197,94,0.15);">✓ Selesai</span>{% else %}<span style="font-size:10px;font-weight:800;color:#f97316;background:rgba(249,115,22,0.1);padding:2px 8px;border-radius:5px;border:1px solid rgba(249,115,22,0.15);">Pending</span>{% endif %}
+                    {% if entry.is_dirty %}<span style="font-size:10px;font-weight:800;color:#c084fc;background:rgba(192,132,252,0.1);padding:2px 8px;border-radius:5px;border:1px solid rgba(192,132,252,0.15);">Edited</span>{% endif %}
+                </div>
+                <p style="font-size:13px;font-weight:700;color:#e2e8f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ entry.iku.indikator }}</p>
+                <p style="font-size:11px;color:#64748b;margin-top:2px;">PIC: {{ entry.pic_tim_kerja.username|default:"—" }}</p>
+            </div>
+            <div style="display:flex;gap:3px;flex-shrink:0;">
+                <span style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;border-radius:5px;{% if entry.kendala %}background:linear-gradient(135deg,#7c3aed,#a855f7);color:white;{% else %}background:rgba(30,41,59,0.5);color:#475569;border:1px solid rgba(71,85,105,0.3);{% endif %}">K</span>
+                <span style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;border-radius:5px;{% if entry.solusi %}background:linear-gradient(135deg,#ec4899,#f472b6);color:white;{% else %}background:rgba(30,41,59,0.5);color:#475569;border:1px solid rgba(71,85,105,0.3);{% endif %}">S</span>
+                <span style="width:26px;height:22px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;border-radius:5px;{% if entry.rtl %}background:linear-gradient(135deg,#6366f1,#818cf8);color:white;{% else %}background:rgba(30,41,59,0.5);color:#475569;border:1px solid rgba(71,85,105,0.3);{% endif %}">RTL</span>
+            </div>
+            <a href="{% url 'entry_form' entry.iku.id %}" style="padding:8px 16px;background:linear-gradient(135deg,#7c3aed,#a855f7);border-radius:8px;color:white;font-size:12px;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 4px 16px -4px rgba(168,85,247,0.4);" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
+                Buka <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            </a>
+        </div>
+        {% empty %}
+        <div style="padding:48px;text-align:center;">
+            <p style="font-size:14px;font-weight:700;color:#94a3b8;">Belum ada IKU yang di-assign untuk periode ini.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<script>
+function filterIku() {
+    const q = document.getElementById('ikuSearch').value.toLowerCase();
+    document.querySelectorAll('.iku-row').forEach(r => {
+        r.style.display = r.dataset.search.includes(q) ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

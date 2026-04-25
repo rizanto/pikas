@@ -1,0 +1,141 @@
+{% extends 'crm_base.html' %}
+{% block title %}Kertas Kerja — PIKAS{% endblock %}
+{% block header_title %}Kertas Kerja{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:24px;">
+    <h1 style="font-size:26px;font-weight:900;color:white;">Manajemen Kertas Kerja</h1>
+    <p style="color:#94a3b8;font-size:14px;font-weight:600;margin-top:4px;">Kelola periode kertas kerja per triwulan dan Google Spreadsheet ID.</p>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;">
+    <!-- LEFT COLUMN: GSheet + Create Period -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+        <!-- GSheet Config Card -->
+        <div class="glass-card" style="padding:24px;">
+            <h3 style="font-size:15px;font-weight:800;color:white;margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+                <svg width="18" height="18" fill="none" stroke="#a855f7" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                Google Spreadsheet
+            </h3>
+            <div style="margin-bottom:14px;">
+                <label style="display:block;font-size:12px;font-weight:700;color:#cbd5e1;margin-bottom:6px;">Spreadsheet ID</label>
+                <input type="text" id="gsheet_id" class="pikas-input" placeholder="ID dari URL Google Sheets" value="{{ config.gsheet_id|default:'' }}">
+            </div>
+            <button onclick="saveGSheetId()" class="pikas-btn-primary" style="width:100%;font-size:12px;">Simpan GSheet ID</button>
+        </div>
+
+        <!-- Create Period Card -->
+        <div class="glass-card" style="padding:24px;">
+            <h3 style="font-size:15px;font-weight:800;color:white;margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+                <svg width="18" height="18" fill="none" stroke="#22c55e" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                Buat Periode Baru
+            </h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+                <div>
+                    <label style="display:block;font-size:12px;font-weight:700;color:#cbd5e1;margin-bottom:6px;">Tahun</label>
+                    <input type="number" id="new_tahun" class="pikas-input" value="2026">
+                </div>
+                <div>
+                    <label style="display:block;font-size:12px;font-weight:700;color:#cbd5e1;margin-bottom:6px;">Triwulan</label>
+                    <select id="new_triwulan" class="pikas-input" style="cursor:pointer;">
+                        <option value="1">TW 1</option>
+                        <option value="2">TW 2</option>
+                        <option value="3">TW 3</option>
+                        <option value="4">TW 4</option>
+                    </select>
+                </div>
+            </div>
+            <div style="margin-bottom:14px;">
+                <label style="display:block;font-size:12px;font-weight:700;color:#cbd5e1;margin-bottom:6px;">Nama Sheet</label>
+                <input type="text" id="new_sheet" class="pikas-input" placeholder="Auto-generated, misal: 2026Q1">
+            </div>
+            <button onclick="createPeriode()" class="pikas-btn-primary" style="width:100%;font-size:12px;background:linear-gradient(135deg,#059669,#22c55e);box-shadow:0 4px 20px -4px rgba(34,197,94,0.4);">Buat Periode</button>
+        </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Period List -->
+    <div class="glass-card" style="overflow:hidden;display:flex;flex-direction:column;">
+        <div style="padding:16px 20px;border-bottom:1px solid rgba(148,163,184,0.06);display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="font-size:15px;font-weight:800;color:white;">Daftar Periode Kertas Kerja</h3>
+            <span style="font-size:11px;font-weight:700;color:#94a3b8;background:rgba(15,20,40,0.6);padding:4px 12px;border-radius:20px;border:1px solid rgba(148,163,184,0.08);">{{ periodes|length }} periode</span>
+        </div>
+        <div style="overflow-y:auto;flex:1;">
+            {% for p in periodes %}
+            <div style="padding:16px 20px;border-bottom:1px solid rgba(148,163,184,0.04);display:flex;align-items:center;gap:16px;transition:background 0.15s;" onmouseover="this.style.background='rgba(148,163,184,0.03)'" onmouseout="this.style.background='transparent'">
+                <div style="flex:1;min-width:0;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
+                        <span style="font-size:15px;font-weight:800;color:white;">{{ p.label }}</span>
+                        <span style="font-size:10px;font-weight:800;color:#94a3b8;background:rgba(30,41,59,0.5);padding:2px 8px;border-radius:5px;border:1px solid rgba(71,85,105,0.3);">{{ p.sheet_name }}</span>
+                        {% if p.is_configured %}
+                        <span style="font-size:10px;font-weight:800;color:#22c55e;background:rgba(34,197,94,0.1);padding:2px 8px;border-radius:5px;border:1px solid rgba(34,197,94,0.15);">✓ Dikonfigurasi</span>
+                        {% else %}
+                        <span style="font-size:10px;font-weight:800;color:#f97316;background:rgba(249,115,22,0.1);padding:2px 8px;border-radius:5px;border:1px solid rgba(249,115,22,0.15);">Belum Dikonfigurasi</span>
+                        {% endif %}
+                        {% if p.is_locked %}
+                        <span style="font-size:10px;font-weight:800;color:#f87171;background:rgba(239,68,68,0.1);padding:2px 8px;border-radius:5px;border:1px solid rgba(239,68,68,0.15);">🔒 Locked</span>
+                        {% endif %}
+                        {% if app_config and app_config.active_periode_id == p.id %}
+                        <span style="font-size:10px;font-weight:800;color:#818cf8;background:rgba(129,140,248,0.1);padding:2px 8px;border-radius:5px;border:1px solid rgba(129,140,248,0.2);">★ Aktif</span>
+                        {% endif %}
+                    </div>
+                    <p style="font-size:11px;color:#64748b;">{{ p.iku_count }} IKU terdaftar • Dibuat {{ p.created_at|date:"d M Y" }}</p>
+                </div>
+                <div style="display:flex;gap:6px;flex-shrink:0;align-items:center;">
+                    {% if not app_config or app_config.active_periode_id != p.id %}
+                    <button onclick="setActive('{{ p.id }}')" style="padding:6px 12px;background:rgba(129,140,248,0.1);border:1px solid rgba(129,140,248,0.2);border-radius:8px;color:#818cf8;font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito Sans',sans-serif;transition:all 0.2s;" onmouseover="this.style.background='rgba(129,140,248,0.2)'" onmouseout="this.style.background='rgba(129,140,248,0.1)'" title="Jadikan Periode Aktif">Set Aktif</button>
+                    {% endif %}
+                    <a href="{% url 'periode_config' p.id %}" style="padding:6px 14px;background:linear-gradient(135deg,#7c3aed,#a855f7);border-radius:8px;color:white;font-size:11px;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:5px;transition:all 0.2s;box-shadow:0 4px 16px -4px rgba(168,85,247,0.4);" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
+                        Konfigurasi <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    </a>
+                    <button onclick="deletePeriode('{{ p.id }}','{{ p.label }}')" style="background:none;border:none;color:#f87171;cursor:pointer;padding:4px;" title="Hapus"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                </div>
+            </div>
+            {% empty %}
+            <div style="padding:48px;text-align:center;">
+                <svg width="40" height="40" fill="none" stroke="#334155" viewBox="0 0 24 24" style="margin:0 auto 12px;display:block;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <p style="font-size:14px;font-weight:700;color:#94a3b8;">Belum ada periode</p>
+                <p style="font-size:12px;color:#475569;margin-top:4px;">Buat periode baru di panel sebelah kiri.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+    const API = '{% url "api_kertas_kerja" %}';
+
+    async function apiCall(payload) {
+        try {
+            const r = await fetch(API, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+            const d = await r.json();
+            if (!r.ok) throw new Error(d.error || 'Error');
+            showToast('success','Berhasil',d.message);
+            setTimeout(() => location.reload(), 800);
+        } catch(e) { showToast('error','Gagal',e.message); }
+    }
+
+    function saveGSheetId() {
+        apiCall({action:'save_gsheet_id', gsheet_id:document.getElementById('gsheet_id').value});
+    }
+    function createPeriode() {
+        const t = document.getElementById('new_tahun').value;
+        const q = document.getElementById('new_triwulan').value;
+        const s = document.getElementById('new_sheet').value || (t + 'Q' + q);
+        apiCall({action:'create_periode', tahun:t, triwulan:q, sheet_name:s});
+    }
+    function setActive(id) { apiCall({action:'set_active', periode_id:id}); }
+    async function deletePeriode(id, label) {
+        const ok = await pikasConfirm('Hapus Periode', 'Hapus periode ' + label + '? Semua IKU dan data entry di dalamnya akan ikut terhapus.', 'Hapus', 'linear-gradient(135deg,#dc2626,#ef4444)');
+        if (ok) apiCall({action:'delete_periode', periode_id:id});
+    }
+
+    // Auto-fill sheet name
+    function updateSheetPreview() {
+        const t = document.getElementById('new_tahun').value;
+        const q = document.getElementById('new_triwulan').value;
+        document.getElementById('new_sheet').placeholder = t + 'Q' + q;
+    }
+    document.getElementById('new_tahun').addEventListener('input', updateSheetPreview);
+    document.getElementById('new_triwulan').addEventListener('change', updateSheetPreview);
+</script>
+{% endblock %}

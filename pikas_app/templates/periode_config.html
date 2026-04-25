@@ -1,0 +1,292 @@
+{% extends 'crm_base.html' %}
+{% block title %}Konfigurasi {{ periode.label }} — PIKAS{% endblock %}
+{% block header_title %}Konfigurasi Periode{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.38.0/min/vs/loader.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb & Header -->
+<div style="margin-bottom:20px;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <a href="{% url 'kertas_kerja' %}" style="font-size:12px;font-weight:700;color:#818cf8;text-decoration:none;">← Kertas Kerja</a>
+        <span style="color:#334155;font-size:12px;">›</span>
+        <span style="font-size:12px;font-weight:700;color:#94a3b8;">{{ periode.label }}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;">
+        <div>
+            <h1 style="font-size:26px;font-weight:900;color:white;">Konfigurasi — {{ periode.label }}</h1>
+            <p style="color:#94a3b8;font-size:14px;font-weight:600;margin-top:4px;">Sheet: <span style="color:#a855f7;font-weight:800;">{{ periode.sheet_name }}</span> • {{ ikus|length }} IKU terdaftar</p>
+        </div>
+        <!-- Toolbar -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <label style="display:flex;align-items:center;gap:6px;padding:8px 14px;background:rgba(15,20,40,0.6);border:1px solid rgba(148,163,184,0.1);border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;color:{% if periode.is_locked %}#f87171{% else %}#94a3b8{% endif %};" id="lockLabel">
+                <input type="checkbox" id="lockToggle" {% if periode.is_locked %}checked{% endif %} onchange="toggleLock()" style="accent-color:#ef4444;">
+                <span id="lockText">{% if periode.is_locked %}🔒 Locked{% else %}🔓 Unlocked{% endif %}</span>
+            </label>
+            <button onclick="triggerPull()" style="padding:8px 14px;background:rgba(30,41,59,0.6);border:1px solid rgba(148,163,184,0.1);border-radius:8px;color:white;font-size:12px;font-weight:700;cursor:pointer;font-family:'Nunito Sans',sans-serif;display:flex;align-items:center;gap:6px;transition:all 0.2s;backdrop-filter:blur(10px);" onmouseover="this.style.borderColor='rgba(168,85,247,0.3)'" onmouseout="this.style.borderColor='rgba(148,163,184,0.1)'">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Pull
+            </button>
+            <a href="{% url 'periode_review' periode.id %}" style="padding:8px 14px;background:rgba(30,41,59,0.6);border:1px solid rgba(148,163,184,0.1);border-radius:8px;color:white;font-size:12px;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:6px;transition:all 0.2s;" onmouseover="this.style.borderColor='rgba(34,197,94,0.3)'" onmouseout="this.style.borderColor='rgba(148,163,184,0.1)'">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                View
+            </a>
+            <button onclick="triggerPush()" style="padding:8px 14px;background:linear-gradient(135deg,#dc2626,#ec4899);border:none;border-radius:8px;color:white;font-size:12px;font-weight:700;cursor:pointer;font-family:'Nunito Sans',sans-serif;display:flex;align-items:center;gap:6px;box-shadow:0 4px 16px -4px rgba(220,38,38,0.4);transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                Push
+            </button>
+        </div>
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;height:calc(100vh - 200px);">
+    <!-- LEFT: JSON EDITOR -->
+    <div class="glass-card" style="overflow:hidden;display:flex;flex-direction:column;">
+        <div style="padding:14px 20px;border-bottom:1px solid rgba(148,163,184,0.06);display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="font-size:14px;font-weight:800;color:white;display:flex;align-items:center;gap:8px;">
+                <svg width="16" height="16" fill="none" stroke="#a855f7" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                JSON Config Editor
+            </h3>
+            <button onclick="saveJson()" class="pikas-btn-primary" style="padding:7px 18px;font-size:11px;">💾 Simpan</button>
+        </div>
+        <div id="monaco-editor" style="flex:1;width:100%;"></div>
+    </div>
+
+    <!-- RIGHT: DAFTAR IKU -->
+    <div class="glass-card" style="overflow:hidden;display:flex;flex-direction:column;">
+        <div style="padding:14px 20px;border-bottom:1px solid rgba(148,163,184,0.06);display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="font-size:14px;font-weight:800;color:white;display:flex;align-items:center;gap:8px;">
+                <svg width="16" height="16" fill="none" stroke="#22c55e" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                Daftar IKU
+            </h3>
+            <span style="font-size:11px;font-weight:700;color:#94a3b8;background:rgba(15,20,40,0.6);padding:4px 12px;border-radius:20px;border:1px solid rgba(148,163,184,0.08);">{{ ikus|length }} indikator</span>
+        </div>
+        <div style="overflow-y:auto;flex:1;padding:4px 0;">
+            {% regroup entries by iku.tujuan as tujuan_groups %}
+            {% for group in tujuan_groups %}
+            <div style="padding:10px 20px 6px;">
+                <p style="font-size:10px;font-weight:800;color:#818cf8;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Tujuan</p>
+                <p style="font-size:12px;font-weight:700;color:#e2e8f0;margin-bottom:8px;">
+                    {% if group.list.0.iku.kode_tujuan %}<span style="color:#818cf8;">[{{ group.list.0.iku.kode_tujuan }}]</span> {% endif %}
+                    {{ group.grouper|default:"(Belum diisi)" }}
+                </p>
+                {% regroup group.list by iku.sasaran as sasaran_groups %}
+                {% for sg in sasaran_groups %}
+                <div style="margin-left:12px;border-left:2px solid rgba(129,140,248,0.15);padding-left:12px;margin-bottom:10px;">
+                    <p style="font-size:10px;font-weight:800;color:#c084fc;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Sasaran</p>
+                    <p style="font-size:12px;font-weight:700;color:#cbd5e1;margin-bottom:6px;">
+                        {% if sg.list.0.iku.kode_sasaran %}<span style="color:#c084fc;">[{{ sg.list.0.iku.kode_sasaran }}]</span> {% endif %}
+                        {{ sg.grouper|default:"(Belum diisi)" }}
+                    </p>
+                    {% for entry in sg.list %}
+                    <div style="margin-left:12px;padding:12px 14px;background:rgba(15,20,40,0.4);border:1px solid rgba(148,163,184,0.05);border-radius:10px;margin-bottom:8px;">
+                        <p style="font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:4px;line-height:1.4;">{{ entry.iku.indikator }}</p>
+                        <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+                            <span style="font-size:10px;font-weight:800;color:#a855f7;">{{ entry.iku.kode_indikator }}</span>
+                            <span style="color:#475569;font-size:10px;">|</span>
+                            <span style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;background:rgba(168,85,247,0.1);color:#c084fc;border:1px solid rgba(168,85,247,0.15);">{{ entry.iku.jenis_iku }}</span>
+                            <span style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;background:rgba(59,130,246,0.1);color:#93c5fd;border:1px solid rgba(59,130,246,0.15);">{{ entry.iku.jenis_periode }}</span>
+                            <span style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;background:rgba(236,72,153,0.1);color:#f472b6;border:1px solid rgba(236,72,153,0.15);">{% if entry.iku.jenis_persen %}Persentase{% else %}Nominal{% endif %}</span>
+                            <span style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;background:rgba(34,197,94,0.1);color:#86efac;border:1px solid rgba(34,197,94,0.15);">Target: {{ entry.iku.target|default:"—" }} {{ entry.iku.satuan|default:"" }}</span>
+                            {% if entry.iku.has_proxy %}<span style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;background:rgba(249,115,22,0.1);color:#fdba74;border:1px solid rgba(249,115,22,0.15);">PROKSI</span>{% endif %}
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:10px;font-weight:700;color:#94a3b8;">PIC:</span>
+                            <select class="pikas-input" style="padding:6px 10px;font-size:11px;width:180px;height:auto;" onchange="assignPic('{{ entry.id }}', this.value)">
+                                <option value="">-- Pilih Tim Kerja --</option>
+                                {% for op in operators %}
+                                <option value="{{ op.id }}" {% if entry.pic_tim_kerja_id == op.id %}selected{% endif %}>{{ op.username }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+            {% empty %}
+            <div style="padding:48px 20px;text-align:center;">
+                <svg width="40" height="40" fill="none" stroke="#334155" viewBox="0 0 24 24" style="margin:0 auto 12px;display:block;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                <p style="font-size:14px;font-weight:700;color:#94a3b8;">Belum ada IKU</p>
+                <p style="font-size:12px;color:#475569;margin-top:4px;">Isi JSON di editor, Simpan, lalu klik <strong style="color:#a855f7;">Pull</strong> untuk menarik data dari GSheet.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+const PAPI = '{% url "api_periode_config" periode.id %}';
+let editor = null;
+
+/* ===== Default JSON Template ===== */
+const defaultTemplate = {
+    "iku_list": [
+        {
+            "kode": "1.1.1.1",
+            "cells": {
+                "kode_tujuan": "A10",
+                "tujuan": "A11",
+                "kode_sasaran": "B11",
+                "sasaran": "C11",
+                "kode_indikator": "D12",
+                "indikator": "E13",
+                "jenis_iku": "H12",
+                "jenis_periode": "I12",
+                "jenis_persen": "J12",
+                "target": "K12",
+                "satuan": "L12",
+                "alokasi_target_tw1": "M12",
+                "alokasi_target_tw2": "N12",
+                "alokasi_target_tw3": "O12",
+                "alokasi_target_tw4": "P12",
+                "realisasi_tw1": "Q12",
+                "realisasi_tw2": "R12",
+                "realisasi_tw3": "S12",
+                "realisasi_tw4": "T12",
+                "capaian_tw_tw1": "U12",
+                "capaian_tw_tw2": "V12",
+                "capaian_tw_tw3": "W12",
+                "capaian_tw_tw4": "X12",
+                "capaian_tahunan_tw1": "Y12",
+                "capaian_tahunan_tw2": "Z12",
+                "capaian_tahunan_tw3": "AA12",
+                "capaian_tahunan_tw4": "AB12",
+                "kendala": "AC12",
+                "solusi": "AD12",
+                "rtl": "AE12",
+                "pic_rtl": "AF12",
+                "batas_waktu_rtl": "AG12",
+                "link_bukti_kinerja": "AH12",
+                "link_bukti_tl_sebelumnya": "AI12",
+                "pko_normalisasi": "AJ12",
+                "pko_koreksi_akip": "AK12",
+                "pko_nilai_akhir": "AL12",
+                "link_solusi": "AM12",
+
+                "proksi_x_target_tahunan": "",
+                "proksi_x_target_tw1": "",
+                "proksi_x_target_tw2": "",
+                "proksi_x_target_tw3": "",
+                "proksi_x_target_tw4": "",
+                "proksi_x_realisasi_tw1": "",
+                "proksi_x_realisasi_tw2": "",
+                "proksi_x_realisasi_tw3": "",
+                "proksi_x_realisasi_tw4": "",
+                "proksi_y_target_tahunan": "",
+                "proksi_y_target_tw1": "",
+                "proksi_y_target_tw2": "",
+                "proksi_y_target_tw3": "",
+                "proksi_y_target_tw4": "",
+                "proksi_y_realisasi_tw1": "",
+                "proksi_y_realisasi_tw2": "",
+                "proksi_y_realisasi_tw3": "",
+                "proksi_y_realisasi_tw4": ""
+            }
+        }
+    ]
+};
+
+/* Load saved config or default */
+const savedConfig = {{ config_json_str|safe }};
+const initialValue = JSON.stringify(savedConfig && Object.keys(savedConfig).length > 0 ? savedConfig : defaultTemplate, null, 4);
+
+/* Init Monaco via AMD require */
+document.addEventListener('DOMContentLoaded', function() {
+    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.38.0/min/vs' }});
+    require(['vs/editor/editor.main'], function() {
+        editor = monaco.editor.create(document.getElementById('monaco-editor'), {
+            value: initialValue,
+            language: 'json',
+            theme: 'vs-dark',
+            automaticLayout: true,
+            formatOnPaste: true,
+            minimap: { enabled: false },
+            fontSize: 13,
+            scrollBeyondLastLine: false,
+            padding: { top: 12, bottom: 12 },
+            wordWrap: 'on',
+            tabSize: 4
+        });
+    });
+});
+
+async function periodeApi(payload) {
+    const r = await fetch(PAPI, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+    return d;
+}
+
+async function saveJson() {
+    if (!editor) return;
+    const raw = editor.getValue();
+    try { JSON.parse(raw); } catch(e) {
+        showToast('error', 'JSON Invalid', 'Format JSON tidak valid. Periksa kembali syntax Anda.');
+        return;
+    }
+    try {
+        const d = await periodeApi({ action: 'save_json', config_json: raw });
+        showToast('success', 'Berhasil', d.message);
+    } catch(e) { showToast('error', 'Gagal', e.message); }
+}
+
+async function toggleLock() {
+    try {
+        const d = await periodeApi({ action: 'toggle_lock' });
+        showToast('success', 'Berhasil', d.message);
+        document.getElementById('lockText').textContent = d.is_locked ? '🔒 Locked' : '🔓 Unlocked';
+        document.getElementById('lockLabel').style.color = d.is_locked ? '#f87171' : '#94a3b8';
+    } catch(e) { document.getElementById('lockToggle').checked = !document.getElementById('lockToggle').checked; }
+}
+
+async function triggerPull() {
+    const ok = await pikasConfirm(
+        'Pull Data dari GSheet',
+        'PULL akan menarik data dari Google Sheets berdasarkan konfigurasi JSON untuk periode {{ periode.label }}. Pastikan JSON sudah disimpan sebelumnya.',
+        'Pull Sekarang',
+        'linear-gradient(135deg,#7c3aed,#a855f7)'
+    );
+    if (!ok) return;
+    showLoader('Menarik data dari GSheet...');
+    try {
+        const d = await periodeApi({ action: 'pull' });
+        showToast('success', 'Berhasil', d.message);
+        setTimeout(() => location.reload(), 1200);
+    } catch(e) { 
+        hideLoader();
+        showToast('error', 'Gagal', e.message); 
+    }
+}
+
+async function triggerPush() {
+    const ok = await pikasConfirm(
+        'Push Data ke GSheet',
+        'PUSH akan mengirim data isian operator ke Google Sheets untuk periode {{ periode.label }}. Aksi ini akan menimpa cell TWO_WAY di spreadsheet.',
+        'Push Sekarang',
+        'linear-gradient(135deg,#dc2626,#ec4899)'
+    );
+    if (!ok) return;
+    showLoader('Mengirim data ke GSheet...');
+    try {
+        const d = await periodeApi({ action: 'push' });
+        hideLoader();
+        showToast('success', 'Berhasil', d.message);
+    } catch(e) { 
+        hideLoader();
+        showToast('error', 'Gagal', e.message); 
+    }
+}
+
+async function assignPic(entryId, userId) {
+    try {
+        const d = await periodeApi({ action: 'assign_pic', entry_id: entryId, user_id: userId });
+        showToast('success', 'PIC Disimpan', d.message);
+    } catch(e) {
+        showToast('error', 'Gagal', e.message);
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,179 @@
+{% extends 'crm_base.html' %}
+{% block title %}Pengguna — PIKAS{% endblock %}
+{% block header_title %}Manajemen Pengguna{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:24px;">
+    <h1 style="font-size:26px;font-weight:900;color:white;">Pengguna Sistem</h1>
+    <p style="color:#94a3b8;font-size:14px;font-weight:600;margin-top:4px;">Kelola akses, role, dan akun anggota tim BPS.</p>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;" id="penggunaApp">
+
+    <!-- Create/Edit Form Card -->
+    <div class="glass-card" style="padding:24px;height:fit-content;position:sticky;top:24px;">
+        <h3 id="formTitle" style="font-size:15px;font-weight:800;color:white;margin-bottom:20px;">Buat Pengguna Baru</h3>
+        <form id="userForm" onsubmit="submitUserForm(event)">
+            <div style="margin-bottom:14px;">
+                <label style="display:block;font-size:12px;font-weight:700;color:#cbd5e1;margin-bottom:6px;">Username</label>
+                <input type="text" id="f_username" class="pikas-input" placeholder="NIP / Username" required>
+            </div>
+            <div style="margin-bottom:14px;">
+                <label style="display:block;font-size:12px;font-weight:700;color:#cbd5e1;margin-bottom:6px;">Nama Lengkap</label>
+                <input type="text" id="f_name" class="pikas-input" placeholder="Nama Operator / Tim" required>
+            </div>
+            <div style="margin-bottom:14px;">
+                <label style="display:block;font-size:12px;font-weight:700;color:#cbd5e1;margin-bottom:6px;">Role Akses</label>
+                <select id="f_role" class="pikas-input" style="cursor:pointer;">
+                    <option value="OPERATOR">Operator (Tim Kerja)</option>
+                    <option value="VIEWER">Viewer (Pimpinan)</option>
+                    <option value="ADMIN">Admin</option>
+                </select>
+            </div>
+            <div id="passwordField" style="margin-bottom:14px;">
+                <label style="display:block;font-size:12px;font-weight:700;color:#cbd5e1;margin-bottom:6px;">Password</label>
+                <input type="password" id="f_password" class="pikas-input" placeholder="••••••••">
+            </div>
+            <div style="display:flex;gap:8px;margin-top:18px;">
+                <button type="submit" class="pikas-btn-primary" style="flex:1;" id="submitBtn">Registrasi</button>
+                <button type="button" id="cancelBtn" onclick="cancelEdit()" style="display:none;padding:10px 16px;background:rgba(71,85,105,0.3);border:1px solid rgba(71,85,105,0.3);border-radius:10px;color:#94a3b8;font-weight:700;font-size:13px;cursor:pointer;font-family:'Nunito Sans',sans-serif;">Batal</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- User List Card -->
+    <div class="glass-card" style="overflow:hidden;display:flex;flex-direction:column;">
+        <div style="padding:16px 20px;border-bottom:1px solid rgba(148,163,184,0.06);display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="font-size:15px;font-weight:800;color:white;">Daftar Pengguna</h3>
+            <div style="position:relative;">
+                <input type="text" id="searchInput" class="pikas-input" style="padding-left:32px;width:220px;font-size:12px;" placeholder="Cari nama atau username..." oninput="filterUsers()">
+                <svg width="14" height="14" fill="none" stroke="#475569" viewBox="0 0 24 24" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+        </div>
+        <div style="overflow-y:auto;flex:1;">
+            <table style="width:100%;border-collapse:collapse;">
+                <thead>
+                    <tr style="border-bottom:1px solid rgba(148,163,184,0.06);">
+                        <th style="padding:10px 20px;text-align:left;font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;">Pengguna</th>
+                        <th style="padding:10px 20px;text-align:left;font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;">Role</th>
+                        <th style="padding:10px 20px;text-align:right;font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    {% for user in users %}
+                    <tr class="user-row" data-search="{{ user.username|lower }} {{ user.first_name|lower }}" style="border-bottom:1px solid rgba(148,163,184,0.03);transition:background 0.15s;" onmouseover="this.style.background='rgba(148,163,184,0.03)'" onmouseout="this.style.background='transparent'">
+                        <td style="padding:12px 20px;">
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#6366f1,#a855f7);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:white;flex-shrink:0;">{{ user.username|make_list|first|upper }}</div>
+                                <div>
+                                    <div style="font-size:13px;font-weight:700;color:white;">{{ user.username }}{% if user.is_superuser %} <span style="font-size:9px;font-weight:800;color:#fbbf24;background:rgba(251,191,36,0.1);padding:1px 6px;border-radius:4px;border:1px solid rgba(251,191,36,0.2);">SU</span>{% endif %}</div>
+                                    <div style="font-size:11px;color:#64748b;">{{ user.first_name|default:"—" }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="padding:12px 20px;">
+                            <span style="font-size:11px;font-weight:800;padding:3px 10px;border-radius:6px;{% if user.role == 'ADMIN' %}color:#f87171;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.15);{% elif user.role == 'VIEWER' %}color:#60a5fa;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.15);{% else %}color:#c084fc;background:rgba(192,132,252,0.1);border:1px solid rgba(192,132,252,0.15);{% endif %}">{{ user.role }}</span>
+                        </td>
+                        <td style="padding:12px 20px;text-align:right;">
+                            <button onclick="editUser({{ user.id }},'{{ user.username }}','{{ user.first_name|escapejs }}','{{ user.role }}')" style="background:none;border:none;color:#818cf8;cursor:pointer;padding:4px;" title="Edit">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                            </button>
+                            <button onclick="openResetModal({{ user.id }},'{{ user.username }}')" style="background:none;border:none;color:#fbbf24;cursor:pointer;padding:4px;" title="Reset Password">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                            </button>
+                            {% if not user.is_superuser %}
+                            <button onclick="deleteUser({{ user.id }},'{{ user.username }}')" style="background:none;border:none;color:#f87171;cursor:pointer;padding:4px;" title="Hapus">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Reset Password Modal -->
+<div id="resetModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(5,8,22,0.8);backdrop-filter:blur(8px);align-items:center;justify-content:center;">
+    <div class="glass-card" style="padding:28px;max-width:400px;width:90%;">
+        <h3 style="font-size:16px;font-weight:800;color:white;margin-bottom:16px;">Reset Password <span id="resetTargetName" style="color:#a855f7;"></span></h3>
+        <input type="password" id="newPasswordInput" class="pikas-input" placeholder="Password baru" style="margin-bottom:16px;">
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+            <button onclick="closeResetModal()" style="padding:8px 16px;background:rgba(71,85,105,0.3);border:1px solid rgba(71,85,105,0.3);border-radius:8px;color:#94a3b8;font-weight:700;font-size:13px;cursor:pointer;font-family:'Nunito Sans',sans-serif;">Batal</button>
+            <button onclick="submitResetPassword()" class="pikas-btn-primary">Reset</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let isEditing = false, editId = null, resetTargetId = null;
+    const API = '{% url "api_manage_user" %}';
+
+    function filterUsers() {
+        const q = document.getElementById('searchInput').value.toLowerCase();
+        document.querySelectorAll('.user-row').forEach(r => {
+            r.style.display = r.dataset.search.includes(q) ? '' : 'none';
+        });
+    }
+
+    function editUser(id, username, name, role) {
+        isEditing = true; editId = id;
+        document.getElementById('f_username').value = username;
+        document.getElementById('f_name').value = name;
+        document.getElementById('f_role').value = role;
+        document.getElementById('passwordField').style.display = 'none';
+        document.getElementById('formTitle').textContent = 'Edit Pengguna';
+        document.getElementById('submitBtn').textContent = 'Simpan Perubahan';
+        document.getElementById('cancelBtn').style.display = 'block';
+    }
+
+    function cancelEdit() {
+        isEditing = false; editId = null;
+        document.getElementById('userForm').reset();
+        document.getElementById('passwordField').style.display = 'block';
+        document.getElementById('formTitle').textContent = 'Buat Pengguna Baru';
+        document.getElementById('submitBtn').textContent = 'Registrasi';
+        document.getElementById('cancelBtn').style.display = 'none';
+    }
+
+    function openResetModal(id, name) {
+        resetTargetId = id;
+        document.getElementById('resetTargetName').textContent = name;
+        document.getElementById('newPasswordInput').value = '';
+        document.getElementById('resetModal').style.display = 'flex';
+    }
+    function closeResetModal() { document.getElementById('resetModal').style.display = 'none'; }
+
+    async function apiCall(payload) {
+        try {
+            const r = await fetch(API, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+            const d = await r.json();
+            if (!r.ok) throw new Error(d.error || 'Error');
+            showToast('success','Berhasil',d.message);
+            setTimeout(() => location.reload(), 800);
+        } catch(e) { showToast('error','Gagal',e.message); }
+    }
+
+    function submitUserForm(e) {
+        e.preventDefault();
+        const payload = { action: isEditing?'edit':'create', username: document.getElementById('f_username').value, first_name: document.getElementById('f_name').value, role: document.getElementById('f_role').value };
+        if (isEditing) { payload.user_id = editId; }
+        else { payload.password = document.getElementById('f_password').value; if(!payload.password){showToast('error','Gagal','Password wajib diisi.');return;} }
+        apiCall(payload);
+    }
+
+    function submitResetPassword() {
+        const pw = document.getElementById('newPasswordInput').value;
+        if (!pw) { showToast('error','Gagal','Password tidak boleh kosong.'); return; }
+        apiCall({ action:'reset_password', user_id:resetTargetId, new_password:pw });
+        closeResetModal();
+    }
+
+    async function deleteUser(id, name) {
+        const ok = await pikasConfirm('Hapus Pengguna', 'Hapus pengguna "'+name+'"? Aksi ini tidak dapat dibatalkan.', 'Hapus', 'linear-gradient(135deg,#dc2626,#ef4444)');
+        if (ok) apiCall({ action:'delete', user_id:id });
+    }
+</script>
+{% endblock %}
