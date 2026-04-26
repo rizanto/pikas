@@ -103,7 +103,7 @@
 
             {% for entry in entries %}
             <div class="iku-detail" id="detail-{{ entry.id }}" style="display:none; animation: fadeIn 0.2s ease-out;">
-                <form id="form-{{ entry.id }}" onsubmit="saveEntry(event, '{{ entry.iku.id }}', '{{ entry.id }}')" style="display:flex; flex-direction:column; gap:16px;">
+                <form id="form-{{ entry.id }}" onsubmit="saveEntry(event, '{{ entry.iku.id }}', '{{ entry.id }}', {{ entry.iku.has_proxy|yesno:'true,false' }})" style="display:flex; flex-direction:column; gap:16px;">
                     
                     <!-- Identitas -->
                     <div class="bento-card" style="border-left:3px solid #a855f7;">
@@ -127,8 +127,17 @@
                         <p class="bento-title">Isian Realisasi (TW {{ periode.triwulan }})</p>
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:12px;">
                             <div>
-                                <label style="font-size:11px; font-weight:700; color:#cbd5e1; display:block; margin-bottom:6px;">Realisasi TW {{ periode.triwulan }}</label>
-                                <input type="text" name="realisasi" class="input-field" value="{{ entry.realisasi }}" {% if periode.is_locked %}disabled{% endif %} placeholder="Masukkan angka...">
+                                <label style="font-size:11px; font-weight:700; color:#cbd5e1; display:block; margin-bottom:6px;">
+                                    Realisasi TW {{ periode.triwulan }}
+                                    {% if entry.iku.has_proxy %}
+                                    <span style="background:rgba(252,211,77,0.1); color:#fcd34d; border:1px solid rgba(252,211,77,0.2); padding:2px 6px; border-radius:4px; font-size:9px; margin-left:8px; font-weight:900; letter-spacing:0.5px;">FORMULA AUTO</span>
+                                    {% endif %}
+                                </label>
+                                <input type="text" name="realisasi" class="input-field" value="{{ entry.realisasi }}" 
+                                    {% if periode.is_locked or entry.iku.has_proxy %}
+                                    readonly style="background:rgba(15,20,40,0.6); border:1px dashed rgba(148,163,184,0.2); color:#64748b; cursor:not-allowed; box-shadow:none;"
+                                    {% endif %} 
+                                    placeholder="{% if entry.iku.has_proxy %}Nilai akan dikalkulasi otomatis oleh GSheet...{% else %}Masukkan angka...{% endif %}">
                             </div>
                             <div>
                                 <p style="font-size:11px; font-weight:700; color:#94a3b8; margin-bottom:6px;">Capaian & Histori Sebelumnya</p>
@@ -344,7 +353,7 @@
         }, 200);
     }
 
-    async function saveEntry(e, ikuId, entryId) {
+    async function saveEntry(e, ikuId, entryId, hasProxy) {
         e.preventDefault();
         const form = e.target;
         
@@ -371,13 +380,18 @@
         
         if (data.is_done) {
             const requiredFields = [
-                { val: data.realisasi, name: 'Realisasi TW Berjalan' },
                 { val: data.kendala, name: 'Kendala' },
                 { val: data.solusi, name: 'Solusi' },
                 { val: data.rtl, name: 'Rencana Tindak Lanjut (RTL)' },
                 { val: data.pic_rtl, name: 'PIC RTL' },
                 { val: data.batas_waktu_rtl, name: 'Batas Waktu RTL' }
             ];
+            
+            // Tambahkan Realisasi jika TIDAK ada proksi
+            if (!hasProxy) {
+                requiredFields.push({ val: data.realisasi, name: 'Realisasi TW Berjalan' });
+            }
+            
             if (px) requiredFields.push({ val: data.proksi_x_realisasi, name: 'Realisasi Proksi X' });
             if (py) requiredFields.push({ val: data.proksi_y_realisasi, name: 'Realisasi Proksi Y' });
 

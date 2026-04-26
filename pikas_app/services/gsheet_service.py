@@ -51,10 +51,9 @@ def sanitize_for_gsheet(text):
 
 
 @transaction.atomic
-def pull_periode_data(gsheet_id, periode):
+def pull_periode_data(gsheet_id, periode, ignore_dirty=False, only_done=False):
     """
     Pull data dari GSheet untuk periode tertentu.
-    Membaca cell mapping dari setiap MasterIKU.cells
     """
     client = get_gspread_client()
     try:
@@ -63,7 +62,15 @@ def pull_periode_data(gsheet_id, periode):
         raise ValueError(f"Could not open spreadsheet {gsheet_id}: {str(e)}")
 
     sheet_name = periode.sheet_name
-    ikus = MasterIKU.objects.filter(periode=periode)
+    ikus_query = MasterIKU.objects.filter(periode=periode)
+    
+    # Jika only_done=True, kita hanya memproses IKU yang entry-nya sudah is_done
+    if only_done:
+        ikus_query = ikus_query.filter(entry__is_done=True).distinct()
+
+    ikus = list(ikus_query)
+    if not ikus:
+        return
 
     # Collect ALL ranges to fetch in batch
     ranges_to_fetch = []
@@ -79,8 +86,6 @@ def pull_periode_data(gsheet_id, periode):
         return
 
     try:
-        # Menggunakan FORMATTED_VALUE agar nilai (termasuk hasil formula) diambil sebagai string.
-        # Ini menghindari masalah filter 'default' di Django yang menganggap angka 0 sebagai False.
         values_response = spreadsheet.values_batch_get(
             ranges_to_fetch, 
             params={'valueRenderOption': 'FORMATTED_VALUE'}
@@ -97,6 +102,7 @@ def pull_periode_data(gsheet_id, periode):
             fetched_data[rng_str] = val
 
     entries_to_update = []
+    tw = periode.triwulan
 
     for iku in ikus:
         cells = iku.cells or {}
@@ -108,15 +114,7 @@ def pull_periode_data(gsheet_id, periode):
                 return None
             return fetched_data.get(f"{sheet_name}!{coord.strip()}")
 
-        # Build pulled_data dict (ALL fields from GSheet)
-        pulled = {}
-        for key in cells:
-            val = get_val(key)
-            if val is not None:
-                pulled[key] = val
-
-        # Metadata sync (Optional: Update MasterIKU fields if cell is mapped)
-        meta_updated = False
+        # Update metadata MasterIKU (Selalu diupdate jika ada perubahan di GSheet)
         meta_map = {
             'tujuan': cells.get('tujuan'),
             'kode_tujuan': cells.get('kode_tujuan'),
@@ -124,77 +122,64 @@ def pull_periode_data(gsheet_id, periode):
             'kode_sasaran': cells.get('kode_sasaran'),
             'indikator': cells.get('indikator'),
             'satuan': cells.get('satuan'),
-            'target': cells.get('target'),  # Menambahkan sync untuk target
+            'target': cells.get('target'),
             'jenis_iku': cells.get('jenis_iku'),
             'jenis_periode': cells.get('jenis_periode'),
-            'jenis_persen': cells.get('jenis_persen'),
             'proxy_x_label': cells.get('proksi_x'),
             'proxy_y_label': cells.get('proksi_y'),
         }
-        
+        meta_updated = False
         for field, cell_coord in meta_map.items():
-            if cell_coord and f"{sheet_name}!{cell_coord}" in fetched_data:
-                raw_val = fetched_data[f"{sheet_name}!{cell_coord}"]
-                if raw_val is None:
-                    continue
-                    
-                val = str(raw_val).strip()
-                
-                # Handle Boolean conversion for jenis_persen
-                if field == 'jenis_persen':
-                    # True if contains '%', False if contains 'non' or doesn't have '%'
-                    clean_val = val.lower()
-                    bool_val = '%' in clean_val and 'non' not in clean_val
-                    if bool_val != getattr(iku, field):
-                        setattr(iku, field, bool_val)
-                        meta_updated = True
-                elif val != getattr(iku, field):
-                    setattr(iku, field, val)
+            if cell_coord and isinstance(cell_coord, str):
+                # Gunakan .strip() agar match dengan key di fetched_data
+                val = fetched_data.get(f"{sheet_name}!{cell_coord.strip()}")
+                if val is not None and str(val).strip() != str(getattr(iku, field)):
+                    setattr(iku, field, str(val).strip())
                     meta_updated = True
-        
         if meta_updated:
             iku.save()
 
-        # Update FRAEntry pulled_data
-        entry.pulled_data = pulled
+        # Update FRAEntry
+        # Jika ignore_dirty=True (saat Push & Sync), kita timpa semuanya.
+        # Jika ignore_dirty=False (saat Pull Global), kita hanya timpa jika is_dirty=False.
+        if ignore_dirty or not entry.is_dirty:
+            # 1. Update Realisasi
+            val_r = get_val(f'realisasi_tw{tw}')
+            if val_r is not None:
+                entry.realisasi = str(val_r)
 
-        # TWO_WAY Fields → only overwrite if NOT dirty (operator hasn't edited yet)
-        if not entry.is_dirty:
+            # 2. Update Narrative Fields
             for cell_key, entry_field in ENTRY_FIELD_MAP.items():
                 val = get_val(cell_key)
                 if val is not None:
                     setattr(entry, entry_field, str(val))
 
-            # Realisasi for active TW
-            tw = periode.triwulan
-            realisasi_key = f'realisasi_tw{tw}'
-            val_r = get_val(realisasi_key)
-            if val_r is not None:
-                entry.realisasi = str(val_r)
-
+            # 3. Update Proxy
             if iku.has_proxy:
                 val_px = get_val(f'proksi_x_realisasi_tw{tw}')
                 val_py = get_val(f'proksi_y_realisasi_tw{tw}')
-                if val_px is not None:
-                    entry.proksi_x_realisasi = str(val_px)
-                if val_py is not None:
-                    entry.proksi_y_realisasi = str(val_py)
+                if val_px is not None: entry.proksi_x_realisasi = str(val_px)
+                if val_py is not None: entry.proksi_y_realisasi = str(val_py)
 
+            # Jika ini adalah proses Sync setelah Push, maka kita reset is_dirty
+            if ignore_dirty:
+                entry.is_dirty = False
+
+        entry.pulled_data = {k: get_val(k) for k in cells if get_val(k) is not None}
         entry.last_synced_at = timezone.now()
         entries_to_update.append(entry)
 
     if entries_to_update:
         FRAEntry.objects.bulk_update(entries_to_update, [
-            'pulled_data', 'kendala', 'solusi', 'rtl', 'pic_rtl',
-            'batas_waktu_rtl', 'link_bukti_kinerja', 'link_bukti_tl_sebelumnya',
-            'link_solusi', 'realisasi', 'proksi_x_realisasi', 'proksi_y_realisasi',
-            'last_synced_at'
+            'realisasi', 'kendala', 'solusi', 'rtl', 'pic_rtl', 'batas_waktu_rtl',
+            'proksi_x_realisasi', 'proksi_y_realisasi', 'is_dirty', 'pulled_data', 'last_synced_at'
         ])
 
 
 def push_periode_data(gsheet_id, periode):
     """
-    Push TWO_WAY data ke GSheet untuk periode tertentu.
+    Push & Sync: Push data IKU yang 'is_done' ke GSheet, 
+    lalu tarik kembali (SYNC) untuk mendapatkan nilai kalkulasi terbaru.
     """
     client = get_gspread_client()
     try:
@@ -202,9 +187,14 @@ def push_periode_data(gsheet_id, periode):
     except Exception as e:
         raise ValueError(f"Could not open spreadsheet {gsheet_id}: {str(e)}")
 
+    # Hanya PUSH entri yang sudah TANDAI SELESAI
     entries = FRAEntry.objects.filter(
-        iku__periode=periode
+        iku__periode=periode,
+        is_done=True
     ).select_related('iku')
+
+    if not entries.exists():
+        raise ValueError("Tidak ada data IKU berstatus 'Selesai' untuk di-Push.")
 
     batch_data = []
     sheet_name = periode.sheet_name
@@ -213,7 +203,6 @@ def push_periode_data(gsheet_id, periode):
     for entry in entries:
         cells = entry.iku.cells or {}
 
-        # Push narrative/link fields
         field_push_map = {
             'kendala': entry.kendala,
             'solusi': entry.solusi,
@@ -225,9 +214,10 @@ def push_periode_data(gsheet_id, periode):
             'link_solusi': entry.link_solusi,
         }
 
-        # Push realisasi for active TW
-        realisasi_key = f'realisasi_tw{tw}'
-        field_push_map[realisasi_key] = entry.realisasi
+        # Push realisasi for active TW ONLY IF NO PROXY
+        if not entry.iku.has_proxy:
+            realisasi_key = f'realisasi_tw{tw}'
+            field_push_map[realisasi_key] = entry.realisasi
 
         # Push proxy realisasi if applicable
         if entry.iku.has_proxy:
@@ -244,10 +234,16 @@ def push_periode_data(gsheet_id, periode):
                 'values': [[val]]
             })
 
-    if not batch_data:
-        return
+    if batch_data:
+        try:
+            body = {
+                'valueInputOption': 'USER_ENTERED',
+                'data': batch_data
+            }
+            spreadsheet.values_batch_update(body)
+        except Exception as e:
+            raise ValueError(f"Failed to batch_update to Google Sheets: {str(e)}")
 
-    try:
-        spreadsheet.values_batch_update(batch_data)
-    except Exception as e:
-        raise ValueError(f"Failed to batch_update to Google Sheets: {str(e)}")
+    # LANGKAH SYNC: Tarik kembali data dari GSheet untuk meng-update hasil kalkulasi (formula)
+    # ignore_dirty=True agar menimpa isian lokal & me-reset flag 'Edited'
+    pull_periode_data(gsheet_id, periode, ignore_dirty=True, only_done=True)

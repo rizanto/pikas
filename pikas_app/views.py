@@ -374,7 +374,7 @@ def api_periode_config(request, periode_id):
             if not config or not config.gsheet_id:
                 return JsonResponse({'error': 'GSheet ID belum dikonfigurasi.'}, status=400)
             push_periode_data(config.gsheet_id, periode)
-            return JsonResponse({'status': 'success', 'message': f'PUSH data ke GSheet berhasil untuk {periode.label}.'})
+            return JsonResponse({'status': 'success', 'message': f'PUSH & SYNC data ke GSheet berhasil untuk {periode.label}. Seluruh IKU selesai telah diperbarui.'})
 
         elif action == 'assign_pic':
             entry_id = data.get('entry_id')
