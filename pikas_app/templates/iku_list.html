@@ -1,68 +1,141 @@
 {% extends 'crm_base.html' %}
-{% block title %}IKU Workspace — PIKAS{% endblock %}
-{% block header_title %}Workspace IKU{% endblock %}
+{% block title %}Kertas Kerja IKU — PIKAS{% endblock %}
+{% block header_title %}Kertas Kerja IKU{% endblock %}
 
 {% block content %}
-{% if error %}
-<div style="display:flex;align-items:center;justify-content:center;height:60vh;">
-    <div class="glass-card" style="text-align:center;padding:48px;max-width:480px;">
-        <svg width="48" height="48" fill="none" stroke="#f59e0b" viewBox="0 0 24 24" style="margin:0 auto 16px;display:block;opacity:0.7"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
-        <h3 style="font-size:18px;font-weight:800;color:white;margin-bottom:8px;">{{ error }}</h3>
+<!-- Header Minimalis & Status Pills -->
+<div style="margin-bottom:24px; display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px;">
+    <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <a href="{% url 'dashboard' %}" style="font-size:12px;font-weight:700;color:#818cf8;text-decoration:none;">← Dashboard</a>
+            <span style="color:#334155;font-size:12px;">›</span>
+            <span style="font-size:12px;font-weight:700;color:#94a3b8;">Kertas Kerja</span>
+        </div>
+        <h1 style="font-size:24px;font-weight:900;color:white;margin-bottom:8px;">Kertas Kerja IKU</h1>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <p style="font-size:13px;color:#94a3b8;">Isi dan lengkapi data realisasi serta bukti kinerja.</p>
+            <span style="font-size:11px;font-weight:700;color:{% if periode.is_locked %}#ef4444{% else %}#3b82f6{% endif %};background:rgba({% if periode.is_locked %}239,68,68{% else %}59,130,246{% endif %},0.1);padding:4px 12px;border-radius:20px;border:1px solid rgba({% if periode.is_locked %}239,68,68{% else %}59,130,246{% endif %},0.15);">{% if periode.is_locked %}🔒 Periode Dikunci{% else %}🔓 Periode Aktif{% endif %}</span>
+        </div>
     </div>
+    
+    <form method="GET" style="display:flex; align-items:center; gap:12px;">
+        <label style="font-size:12px; font-weight:800; color:#94a3b8; text-transform:uppercase;">Periode:</label>
+        <select name="periode" class="pikas-input" style="width:auto; min-width:180px; font-size:13px; padding:8px 12px;" onchange="this.form.submit()">
+            {% for p in periodes %}
+            <option value="{{ p.id }}" {% if p.id == periode.id %}selected{% endif %}>{{ p.tahun }} TW{{ p.triwulan }} ({{ p.sheet_name }})</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+{% if error %}
+<div class="glass-card" style="padding:40px; text-align:center;">
+    <p style="font-size:16px;font-weight:800;color:#f87171;">{{ error }}</p>
 </div>
 {% else %}
-<div style="margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;">
-    <div>
-        <h1 style="font-size:26px;font-weight:900;color:white;">Kertas Kerja Anda</h1>
-        <p style="color:#94a3b8;font-size:14px;font-weight:600;margin-top:4px;">Lengkapi realisasi, kendala, solusi, dan RTL pada periode berjalan.</p>
-    </div>
-    <span style="font-size:11px;font-weight:700;color:#a855f7;background:rgba(168,85,247,0.1);padding:6px 14px;border-radius:20px;border:1px solid rgba(168,85,247,0.15);">Periode {{ periode.label }}</span>
-</div>
 
-<div class="glass-card" style="overflow:hidden;">
-    <div style="padding:16px 20px;border-bottom:1px solid rgba(148,163,184,0.06);display:flex;justify-content:space-between;align-items:center;">
-        <h3 style="font-size:15px;font-weight:800;color:white;">Daftar Tugas IKU</h3>
-        <div style="position:relative;">
-            <input type="text" id="ikuSearch" class="pikas-input" style="padding-left:32px;width:240px;font-size:12px;" placeholder="Cari kode atau nama IKU..." oninput="filterIku()">
-            <svg width="14" height="14" fill="none" stroke="#475569" viewBox="0 0 24 24" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+<style>
+    .status-chip { display:inline-block; width:20px; height:20px; line-height:18px; text-align:center; border-radius:4px; font-size:9px; font-weight:800; color:#475569; background:rgba(15,20,40,0.5); border:1px solid rgba(148,163,184,0.1); }
+    .status-chip-wide { width:auto; padding:0 6px; }
+    .filled-k { background:rgba(239,68,68,0.1); color:#fca5a5; border-color:rgba(239,68,68,0.2); }
+    .filled-s { background:rgba(34,197,94,0.1); color:#86efac; border-color:rgba(34,197,94,0.2); }
+    .filled-r { background:rgba(59,130,246,0.1); color:#93c5fd; border-color:rgba(59,130,246,0.2); }
+    .filled-b { background:rgba(168,85,247,0.1); color:#c084fc; border-color:rgba(168,85,247,0.2); }
+    
+    .filter-btn { padding:8px 16px; border-radius:8px; font-size:12px; font-weight:700; color:#94a3b8; background:rgba(15,20,40,0.6); border:1px solid rgba(148,163,184,0.1); cursor:pointer; transition:all 0.2s; }
+    .filter-btn.active { background:rgba(59,130,246,0.1); color:#60a5fa; border-color:rgba(59,130,246,0.3); }
+    .filter-btn:hover:not(.active) { background:rgba(148,163,184,0.05); }
+</style>
+
+<div class="glass-card" style="padding:0; overflow:hidden;">
+    <div style="padding:20px; border-bottom:1px solid rgba(148,163,184,0.08); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+        <div>
+            <h2 style="font-size:16px;font-weight:800;color:white;letter-spacing:0.5px;">Daftar IKU Saya</h2>
+            <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-top:4px;">Periode: {{ periode.label }}</div>
+        </div>
+        <div style="display:flex; gap:10px;">
+            <input type="text" id="searchInput" class="pikas-input" placeholder="Cari Kode / Indikator..." onkeyup="filterTable()" style="padding:8px 14px; font-size:12px; width:250px;">
         </div>
     </div>
-    <div style="max-height:70vh;overflow-y:auto;">
-        {% for entry in entries %}
-        <div class="iku-row" data-search="{{ entry.iku.kode_indikator|lower }} {{ entry.iku.indikator|lower }}" style="padding:16px 20px;border-bottom:1px solid rgba(148,163,184,0.04);display:flex;align-items:center;gap:16px;transition:background 0.15s;" onmouseover="this.style.background='rgba(148,163,184,0.03)'" onmouseout="this.style.background='transparent'">
-            <div style="flex:1;min-width:0;">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
-                    <span style="font-size:12px;font-weight:800;color:#a855f7;background:rgba(168,85,247,0.1);padding:2px 8px;border-radius:5px;border:1px solid rgba(168,85,247,0.15);">{{ entry.iku.kode_indikator }}</span>
-                    {% if entry.is_done %}<span style="font-size:10px;font-weight:800;color:#22c55e;background:rgba(34,197,94,0.1);padding:2px 8px;border-radius:5px;border:1px solid rgba(34,197,94,0.15);">✓ Selesai</span>{% else %}<span style="font-size:10px;font-weight:800;color:#f97316;background:rgba(249,115,22,0.1);padding:2px 8px;border-radius:5px;border:1px solid rgba(249,115,22,0.15);">Pending</span>{% endif %}
-                    {% if entry.is_dirty %}<span style="font-size:10px;font-weight:800;color:#c084fc;background:rgba(192,132,252,0.1);padding:2px 8px;border-radius:5px;border:1px solid rgba(192,132,252,0.15);">Edited</span>{% endif %}
-                </div>
-                <p style="font-size:13px;font-weight:700;color:#e2e8f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ entry.iku.indikator }}</p>
-                <p style="font-size:11px;color:#64748b;margin-top:2px;">PIC: {{ entry.pic_tim_kerja.username|default:"—" }}</p>
-            </div>
-            <div style="display:flex;gap:3px;flex-shrink:0;">
-                <span style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;border-radius:5px;{% if entry.kendala %}background:linear-gradient(135deg,#7c3aed,#a855f7);color:white;{% else %}background:rgba(30,41,59,0.5);color:#475569;border:1px solid rgba(71,85,105,0.3);{% endif %}">K</span>
-                <span style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;border-radius:5px;{% if entry.solusi %}background:linear-gradient(135deg,#ec4899,#f472b6);color:white;{% else %}background:rgba(30,41,59,0.5);color:#475569;border:1px solid rgba(71,85,105,0.3);{% endif %}">S</span>
-                <span style="width:26px;height:22px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;border-radius:5px;{% if entry.rtl %}background:linear-gradient(135deg,#6366f1,#818cf8);color:white;{% else %}background:rgba(30,41,59,0.5);color:#475569;border:1px solid rgba(71,85,105,0.3);{% endif %}">RTL</span>
-            </div>
-            <a href="{% url 'entry_form' entry.iku.id %}" style="padding:8px 16px;background:linear-gradient(135deg,#7c3aed,#a855f7);border-radius:8px;color:white;font-size:12px;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:6px;transition:all 0.2s;box-shadow:0 4px 16px -4px rgba(168,85,247,0.4);" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
-                Buka <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-            </a>
-        </div>
-        {% empty %}
-        <div style="padding:48px;text-align:center;">
-            <p style="font-size:14px;font-weight:700;color:#94a3b8;">Belum ada IKU yang di-assign untuk periode ini.</p>
-        </div>
-        {% endfor %}
+    
+    <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; text-align:left;" id="ikuTable">
+            <thead style="position: sticky; top:0; z-index:5;">
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.06); background:rgba(15,20,40,0.9); backdrop-filter:blur(10px); color:#94a3b8; font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:1px;">
+                    <th style="padding:14px 16px; width:80px;">Kode</th>
+                    <th style="padding:14px 16px;">Indikator Kinerja</th>
+                    <th style="padding:14px 16px; width:100px;">PIC</th>
+                    <th style="padding:14px 16px; width:140px;">Capaian</th>
+                    <th style="padding:14px 16px; width:220px;">Isian & Bukti</th>
+                    <th style="padding:14px 16px; text-align:right;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                <tr class="iku-row" style="border-bottom:1px solid rgba(255,255,255,0.03); transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                    <td style="padding:14px 16px; vertical-align:top;">
+                        <span style="font-size:10px;font-weight:900;color:#a855f7;background:rgba(168,85,247,0.1);padding:2px 6px;border-radius:4px;border:1px solid rgba(168,85,247,0.2);">{{ entry.iku.kode_indikator }}</span>
+                    </td>
+                    <td style="padding:14px 16px; vertical-align:top;" class="indikator-col">
+                        <p style="font-size:13px;font-weight:700;color:#f1f5f9; line-height:1.5; white-space:normal; min-width:220px;">{{ entry.iku.indikator }}</p>
+                        {% if not entry.is_done %}
+                        <span style="font-size:9px; font-weight:800; color:#f97316; margin-top:6px; display:inline-block; text-transform:uppercase; letter-spacing:0.5px;">● Belum Selesai</span>
+                        {% else %}
+                        <span style="font-size:9px; font-weight:800; color:#22c55e; margin-top:6px; display:inline-block; text-transform:uppercase; letter-spacing:0.5px;">● Selesai</span>
+                        {% endif %}
+                        {% if periode.is_locked %}
+                        <span style="font-size:9px; font-weight:800; color:#ef4444; margin-top:6px; margin-left:8px; display:inline-block; text-transform:uppercase; letter-spacing:0.5px;">🔒 Dikunci</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding:14px 16px; vertical-align:top; font-size:12px; font-weight:700; color:#cbd5e1;">{{ entry.pic_tim_kerja.username|default:"—" }}</td>
+                    <td style="padding:14px 16px; vertical-align:top;">
+                        <div style="font-size:13px; font-weight:800; color:#f1f5f9;">R: {{ entry.realisasi|default:"-" }}</div>
+                        {% if entry.iku.has_proxy %}
+                        <div style="font-size:10px; font-weight:700; color:#94a3b8; margin-top:4px;">
+                            X:{{ entry.proksi_x_realisasi|default:"-" }} / Y:{{ entry.proksi_y_realisasi|default:"-" }}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td style="padding:14px 16px; vertical-align:top;">
+                        <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                            <span class="status-chip {% if entry.kendala %}filled-k{% endif %}" title="Kendala">K</span>
+                            <span class="status-chip {% if entry.solusi %}filled-s{% endif %}" title="Solusi">S</span>
+                            <span class="status-chip status-chip-wide {% if entry.rtl %}filled-r{% endif %}" title="RTL">RTL</span>
+                            <span class="status-chip status-chip-wide {% if entry.is_bukti_kinerja_done %}filled-b{% endif %}" title="Bukti Kinerja">BK</span>
+                            <span class="status-chip status-chip-wide {% if entry.is_bukti_solusi_done %}filled-b{% endif %}" title="Bukti Solusi">BS</span>
+                            <span class="status-chip status-chip-wide {% if entry.is_bukti_tl_done %}filled-b{% endif %}" title="Bukti RTL">BR</span>
+                        </div>
+                    </td>
+                    <td style="padding:14px 16px; text-align:right; vertical-align:top;">
+                        <a href="{% url 'entry_form' entry.iku.id %}" class="pikas-btn-primary" style="padding:6px 12px; font-size:11px; text-decoration:none; display:inline-block; border-radius:6px; white-space:nowrap;">{% if periode.is_locked %}Lihat Detail{% else %}Edit / Isi{% endif %}</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="padding:48px; text-align:center;">
+                        <svg width="40" height="40" fill="none" stroke="#475569" viewBox="0 0 24 24" style="margin:0 auto 12px;display:block;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                        <p style="font-size:14px;font-weight:700;color:#94a3b8;">Belum ada data IKU di periode ini</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
-{% endif %}
 
 <script>
-function filterIku() {
-    const q = document.getElementById('ikuSearch').value.toLowerCase();
-    document.querySelectorAll('.iku-row').forEach(r => {
-        r.style.display = r.dataset.search.includes(q) ? '' : 'none';
+function filterTable() {
+    const input = document.getElementById('searchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('.iku-row');
+    rows.forEach(row => {
+        const text = row.querySelector('.indikator-col').innerText.toLowerCase() + " " + row.querySelector('span').innerText.toLowerCase();
+        if (text.includes(input)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
     });
 }
 </script>
+{% endif %}
 {% endblock %}

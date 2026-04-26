@@ -185,6 +185,7 @@ class MasterIKU(models.Model):
     ])
     jenis_persen = models.BooleanField(default=True, help_text='True jika satuan persen')
     satuan = models.CharField(max_length=50, blank=True, default='')
+    target = models.CharField(max_length=100, blank=True, default='')
     has_proxy = models.BooleanField(default=False)
     proxy_x_label = models.CharField(max_length=255, blank=True, default='')
     proxy_y_label = models.CharField(max_length=255, blank=True, default='')
@@ -226,8 +227,13 @@ class FRAEntry(models.Model):
     pic_rtl = models.CharField(max_length=255, blank=True, default='')
     batas_waktu_rtl = models.CharField(max_length=255, blank=True, default='')
     link_bukti_kinerja = models.URLField(max_length=500, blank=True, default='')
+    is_bukti_kinerja_done = models.BooleanField(default=False)
+    
     link_bukti_tl_sebelumnya = models.URLField(max_length=500, blank=True, default='')
+    is_bukti_tl_done = models.BooleanField(default=False)
+    
     link_solusi = models.URLField(max_length=500, blank=True, default='')
+    is_bukti_solusi_done = models.BooleanField(default=False)
 
     # Realisasi (TWO_WAY per TW aktif)
     realisasi = models.CharField(max_length=100, blank=True, default='')

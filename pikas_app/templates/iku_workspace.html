@@ -1,0 +1,446 @@
+{% extends 'crm_base.html' %}
+{% block title %}Workspace IKU — PIKAS{% endblock %}
+{% block header_title %}Workspace IKU{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:16px;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <a href="{% url 'dashboard' %}" style="font-size:12px;font-weight:700;color:#818cf8;text-decoration:none;">← Dashboard</a>
+        <span style="color:#334155;font-size:12px;">›</span>
+        <a href="{% url 'iku_list' %}" style="font-size:12px;font-weight:700;color:#818cf8;text-decoration:none;">Kertas Kerja</a>
+        <span style="color:#334155;font-size:12px;">›</span>
+        <span style="font-size:12px;font-weight:700;color:#94a3b8;">Workspace</span>
+    </div>
+    
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;">
+        <div>
+            <h1 style="font-size:24px;font-weight:900;color:white;margin-bottom:8px;">Workspace IKU — {{ periode.label }}</h1>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <span style="font-size:11px;font-weight:700;color:#94a3b8;background:rgba(15,20,40,0.6);padding:4px 12px;border-radius:20px;border:1px solid rgba(148,163,184,0.08);">Total {{ total }} IKU</span>
+                <span style="font-size:11px;font-weight:700;color:#22c55e;background:rgba(34,197,94,0.1);padding:4px 12px;border-radius:20px;border:1px solid rgba(34,197,94,0.15);">{{ done }} Selesai</span>
+                <span style="font-size:11px;font-weight:700;color:{% if periode.is_locked %}#ef4444{% else %}#3b82f6{% endif %};background:rgba({% if periode.is_locked %}239,68,68{% else %}59,130,246{% endif %},0.1);padding:4px 12px;border-radius:20px;border:1px solid rgba({% if periode.is_locked %}239,68,68{% else %}59,130,246{% endif %},0.15);">{% if periode.is_locked %}🔒 Periode Dikunci{% else %}🔓 Periode Aktif{% endif %}</span>
+            </div>
+        </div>
+        
+        <form action="{% url 'iku_list' %}" method="GET" style="display:flex; align-items:center; gap:12px;">
+            <label style="font-size:12px; font-weight:800; color:#94a3b8; text-transform:uppercase;">Periode:</label>
+            <select name="periode" class="pikas-input" style="width:auto; min-width:180px; font-size:13px; padding:8px 12px;" onchange="this.form.submit()">
+                {% for p in periodes %}
+                <option value="{{ p.id }}" {% if p.id == periode.id %}selected{% endif %}>{{ p.tahun }} TW{{ p.triwulan }} ({{ p.sheet_name }})</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+</div>
+
+<style>
+    .iku-tab { border:1px solid transparent; background:rgba(15,20,40,0.4); }
+    .iku-tab:hover { background:rgba(148,163,184,0.05); }
+    .iku-tab.active { background:rgba(168,85,247,0.1); border-color:rgba(168,85,247,0.3); }
+    
+    .bento-card { background:rgba(15,20,40,0.45); border:1px solid rgba(148,163,184,0.06); border-radius:12px; padding:16px; position:relative; overflow:hidden; }
+    .bento-title { font-size:10px; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+    .bento-val { font-size:13px; font-weight:700; color:#f1f5f9; }
+    .bento-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:12px; }
+    
+    .tw-col { display:flex; flex-direction:column; gap:4px; }
+    .tw-label { font-size:10px; font-weight:800; color:#475569; }
+    .tw-box { background:rgba(8,12,30,0.5); border:1px solid rgba(148,163,184,0.05); border-radius:6px; padding:6px 10px; font-size:12px; font-weight:700; color:#cbd5e1; text-align:center; }
+    .tw-box.highlight { color:#a855f7; border-color:rgba(168,85,247,0.2); background:rgba(168,85,247,0.05); }
+    .detail-scroll { flex:1; overflow-y:auto; scroll-behavior:smooth; -webkit-overflow-scrolling:touch; }
+    
+    .input-field { width:100%; padding:10px 14px; background:rgba(8,12,30,0.5); border:1px solid rgba(148,163,184,0.1); border-radius:8px; color:white; font-size:13px; font-family:inherit; transition:all 0.2s; }
+    .input-field:focus { outline:none; border-color:#a855f7; box-shadow:0 0 0 3px rgba(168,85,247,0.15); background:rgba(15,20,40,0.8); }
+    .input-field:disabled { opacity:0.6; cursor:not-allowed; }
+    
+    .upload-btn { display:inline-flex; align-items:center; gap:8px; padding:8px 14px; background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.2); border-radius:8px; color:#60a5fa; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; text-decoration:none; transition:all 0.2s; }
+    .upload-btn:hover { background:rgba(59,130,246,0.2); transform:translateY(-1px); }
+    
+    .save-btn { width:100%; padding:14px; background:linear-gradient(135deg, #7c3aed, #a855f7); border:none; border-radius:10px; color:white; font-size:14px; font-weight:800; cursor:pointer; transition:all 0.2s; display:flex; justify-content:center; align-items:center; gap:8px; box-shadow:0 4px 16px -4px rgba(168,85,247,0.5); }
+    .save-btn:hover { transform:translateY(-2px); box-shadow:0 8px 24px -6px rgba(168,85,247,0.6); }
+    .save-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+    .checkbox-wrapper { display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none; }
+    .checkbox-input { width:18px; height:18px; accent-color:#a855f7; cursor:pointer; }
+</style>
+
+<div style="display:flex; gap:20px; flex:1; min-height:0;">
+    
+    <!-- Sidebar Kiri -->
+    <div class="glass-card" style="width:320px; display:flex; flex-direction:column; overflow:hidden; flex-shrink:0;">
+        <div style="padding:14px 16px; border-bottom:1px solid rgba(148,163,184,0.06);">
+            <input type="text" id="searchIku" class="pikas-input" placeholder="Cari Kode atau Indikator..." onkeyup="filterIku()" style="padding:8px 12px; font-size:12px;">
+        </div>
+        <div style="flex:1; overflow-y:auto; padding:10px;" id="ikuList">
+            {% for entry in entries %}
+            <div class="iku-tab" onclick="showIkuDetail('{{ entry.id }}')" id="tab-{{ entry.id }}" style="padding:12px; border-radius:10px; cursor:pointer; margin-bottom:6px; transition:all 0.2s;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px; align-items:center;">
+                    <span style="font-size:12px;font-weight:800;color:#a855f7;">{{ entry.iku.kode_indikator }}</span>
+                    <span id="tab-status-{{ entry.id }}" style="font-size:10px;font-weight:800;color:{% if entry.is_done %}#22c55e{% else %}#f97316{% endif %};">
+                        {% if entry.is_done %}Selesai{% else %}Pending{% endif %}
+                    </span>
+                </div>
+                <p class="iku-text" style="font-size:12px; font-weight:600; color:#cbd5e1; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">{{ entry.iku.indikator }}</p>
+                <div style="display:flex; justify-content:space-between; margin-top:8px;">
+                    <span style="font-size:10px;color:#64748b;">PIC: {{ entry.pic_tim_kerja.username|default:"—" }}</span>
+                    <span id="tab-edited-{{ entry.id }}" style="font-size:9px;font-weight:800;color:#c084fc;background:rgba(192,132,252,0.1);padding:2px 6px;border-radius:4px;{% if not entry.is_dirty %}display:none;{% endif %}">Edited</span>
+                </div>
+            </div>
+            {% empty %}
+            <div style="text-align:center; padding:30px 20px; color:#64748b; font-size:12px;">Belum ada IKU.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Area Kanan -->
+    <div class="glass-card" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+        <div class="detail-scroll" style="padding:24px; position:relative;" id="detail-container">
+            
+            <div id="empty-state" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; color:#475569;">
+                <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/></svg>
+                <p style="margin-top:16px; font-size:15px; font-weight:800; color:#94a3b8;">Pilih IKU dari daftar di sebelah kiri</p>
+            </div>
+
+            {% for entry in entries %}
+            <div class="iku-detail" id="detail-{{ entry.id }}" style="display:none; animation: fadeIn 0.2s ease-out;">
+                <form id="form-{{ entry.id }}" onsubmit="saveEntry(event, '{{ entry.iku.id }}', '{{ entry.id }}')" style="display:flex; flex-direction:column; gap:16px;">
+                    
+                    <!-- Identitas -->
+                    <div class="bento-card" style="border-left:3px solid #a855f7;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+                            <div>
+                                <span style="font-size:14px;font-weight:900;color:#a855f7;margin-right:8px;">{{ entry.iku.kode_indikator }}</span>
+                                <span style="font-size:11px;font-weight:700;color:#94a3b8;background:rgba(15,20,40,0.6);padding:4px 10px;border-radius:12px;">PIC: {{ entry.pic_tim_kerja.username|default:"Belum Di-assign" }}</span>
+                            </div>
+                            <div style="display:flex;gap:6px;">
+                                <span style="font-size:10px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(168,85,247,0.1);color:#c084fc;">{{ entry.iku.jenis_iku }}</span>
+                            </div>
+                        </div>
+                        <h2 style="font-size:18px;font-weight:800;color:white;line-height:1.4;margin-bottom:12px;">{{ entry.iku.indikator }}</h2>
+                        <div style="display:flex; justify-content:space-between; padding-top:12px; border-top:1px solid rgba(148,163,184,0.1);">
+                            <div><p class="bento-title">Target Tahunan</p><p class="bento-val">{{ entry.iku.target|default:"—" }} {{ entry.iku.satuan }}</p></div>
+                        </div>
+                    </div>
+
+                    <!-- Input Realisasi -->
+                    <div class="bento-card">
+                        <p class="bento-title">Isian Realisasi (TW {{ periode.triwulan }})</p>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:12px;">
+                            <div>
+                                <label style="font-size:11px; font-weight:700; color:#cbd5e1; display:block; margin-bottom:6px;">Realisasi TW {{ periode.triwulan }}</label>
+                                <input type="text" name="realisasi" class="input-field" value="{{ entry.realisasi }}" {% if periode.is_locked %}disabled{% endif %} placeholder="Masukkan angka...">
+                            </div>
+                            <div>
+                                <p style="font-size:11px; font-weight:700; color:#94a3b8; margin-bottom:6px;">Capaian & Histori Sebelumnya</p>
+                                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                                    <div class="tw-box" title="TW 1">TW 1: {{ entry.pulled_data.realisasi_tw1|default:"-" }}</div>
+                                    <div class="tw-box" title="TW 2">TW 2: {{ entry.pulled_data.realisasi_tw2|default:"-" }}</div>
+                                    <div class="tw-box" title="TW 3">TW 3: {{ entry.pulled_data.realisasi_tw3|default:"-" }}</div>
+                                    <div class="tw-box" title="TW 4">TW 4: {{ entry.pulled_data.realisasi_tw4|default:"-" }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if entry.iku.has_proxy %}
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px; padding-top:16px; border-top:1px solid rgba(148,163,184,0.1);">
+                            <div>
+                                <label style="font-size:11px; font-weight:700; color:#fcd34d; display:block; margin-bottom:6px;">Proksi X: {{ entry.iku.proxy_x_label }}</label>
+                                <input type="text" name="proksi_x_realisasi" class="input-field" value="{{ entry.proksi_x_realisasi }}" {% if periode.is_locked %}disabled{% endif %} placeholder="Masukkan proksi X...">
+                            </div>
+                            <div>
+                                <label style="font-size:11px; font-weight:700; color:#6ee7b7; display:block; margin-bottom:6px;">Proksi Y: {{ entry.iku.proxy_y_label }}</label>
+                                <input type="text" name="proksi_y_realisasi" class="input-field" value="{{ entry.proksi_y_realisasi }}" {% if periode.is_locked %}disabled{% endif %} placeholder="Masukkan proksi Y...">
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Input Kualitatif -->
+                    <div class="bento-card">
+                        <p class="bento-title">Evaluasi Kualitatif</p>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:12px;">
+                            <div>
+                                <label style="font-size:11px; font-weight:700; color:#fca5a5; display:block; margin-bottom:6px;">Kendala</label>
+                                <textarea name="kendala" class="input-field" rows="3" {% if periode.is_locked %}disabled{% endif %} placeholder="Deskripsikan kendala...">{{ entry.kendala }}</textarea>
+                            </div>
+                            <div>
+                                <label style="font-size:11px; font-weight:700; color:#6ee7b7; display:block; margin-bottom:6px;">Solusi</label>
+                                <textarea name="solusi" class="input-field" rows="3" {% if periode.is_locked %}disabled{% endif %} placeholder="Deskripsikan solusi...">{{ entry.solusi }}</textarea>
+                            </div>
+                        </div>
+                        <div style="margin-top:16px;">
+                            <label style="font-size:11px; font-weight:700; color:#93c5fd; display:block; margin-bottom:6px;">Rencana Tindak Lanjut (RTL)</label>
+                            <textarea name="rtl" class="input-field" rows="3" {% if periode.is_locked %}disabled{% endif %} placeholder="Deskripsikan RTL...">{{ entry.rtl }}</textarea>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;">
+                            <div>
+                                <label style="font-size:11px; font-weight:700; color:#cbd5e1; display:block; margin-bottom:6px;">Batas Waktu RTL</label>
+                                <input type="text" name="batas_waktu_rtl" class="input-field" value="{{ entry.batas_waktu_rtl }}" {% if periode.is_locked %}disabled{% endif %} placeholder="Contoh: 31 Desember 2026">
+                            </div>
+                            <div>
+                                <label style="font-size:11px; font-weight:700; color:#cbd5e1; display:block; margin-bottom:6px;">PIC RTL</label>
+                                <input type="text" name="pic_rtl" class="input-field" value="{{ entry.pic_rtl }}" {% if periode.is_locked %}disabled{% endif %} placeholder="Siapa yang bertanggung jawab...">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bukti GDrive -->
+                    <div class="bento-card">
+                        <p class="bento-title">Upload Eviden / Bukti Dukung (G-Drive)</p>
+                        <p style="font-size:12px; color:#94a3b8; margin-bottom:16px;">Klik tombol untuk membuka folder G-Drive di tab baru, upload file Anda di sana, lalu centang kotak jika sudah selesai.</p>
+                        
+                        <div style="display:flex; flex-direction:column; gap:16px;">
+                            <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(8,12,30,0.5); padding:12px 16px; border-radius:8px;">
+                                <div>
+                                    <p style="font-size:13px; font-weight:700; color:white; margin-bottom:4px;">Bukti Kinerja</p>
+                                    <label class="checkbox-wrapper">
+                                        <input type="checkbox" name="is_bukti_kinerja_done" class="checkbox-input" {% if entry.is_bukti_kinerja_done %}checked{% endif %} {% if periode.is_locked %}disabled{% endif %}>
+                                        <span style="font-size:12px; color:#a855f7; font-weight:700;">Tandai Sudah Selesai Upload</span>
+                                    </label>
+                                </div>
+                                <a href="{{ entry.link_bukti_kinerja|default:'#' }}" target="_blank" class="upload-btn" {% if not entry.link_bukti_kinerja %}onclick="alert('Folder belum di-set admin'); return false;"{% endif %}>
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5l-2-2z"/></svg>
+                                    Buka Folder Upload
+                                </a>
+                            </div>
+
+                            <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(8,12,30,0.5); padding:12px 16px; border-radius:8px;">
+                                <div>
+                                    <p style="font-size:13px; font-weight:700; color:white; margin-bottom:4px;">Bukti Solusi</p>
+                                    <label class="checkbox-wrapper">
+                                        <input type="checkbox" name="is_bukti_solusi_done" class="checkbox-input" {% if entry.is_bukti_solusi_done %}checked{% endif %} {% if periode.is_locked %}disabled{% endif %}>
+                                        <span style="font-size:12px; color:#22c55e; font-weight:700;">Tandai Sudah Selesai Upload</span>
+                                    </label>
+                                </div>
+                                <a href="{{ entry.link_solusi|default:'#' }}" target="_blank" class="upload-btn" style="color:#4ade80; border-color:rgba(74,222,128,0.2); background:rgba(74,222,128,0.1);" {% if not entry.link_solusi %}onclick="alert('Folder belum di-set admin'); return false;"{% endif %}>
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5l-2-2z"/></svg>
+                                    Buka Folder Upload
+                                </a>
+                            </div>
+
+                            <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(8,12,30,0.5); padding:12px 16px; border-radius:8px;">
+                                <div>
+                                    <p style="font-size:13px; font-weight:700; color:white; margin-bottom:4px;">Bukti RTL</p>
+                                    <label class="checkbox-wrapper">
+                                        <input type="checkbox" name="is_bukti_tl_done" class="checkbox-input" {% if entry.is_bukti_tl_done %}checked{% endif %} {% if periode.is_locked %}disabled{% endif %}>
+                                        <span style="font-size:12px; color:#60a5fa; font-weight:700;">Tandai Sudah Selesai Upload</span>
+                                    </label>
+                                </div>
+                                <a href="{{ entry.link_bukti_tl_sebelumnya|default:'#' }}" target="_blank" class="upload-btn" style="color:#60a5fa; border-color:rgba(96,165,250,0.2); background:rgba(96,165,250,0.1);" {% if not entry.link_bukti_tl_sebelumnya %}onclick="alert('Folder belum di-set admin'); return false;"{% endif %}>
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5l-2-2z"/></svg>
+                                    Buka Folder Upload
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status Selesai Total & Save -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:16px; background:rgba(15,20,40,0.6); border:1px solid rgba(148,163,184,0.1); border-radius:12px;">
+                        <label class="checkbox-wrapper">
+                            <input type="checkbox" name="is_done" class="checkbox-input" style="width:24px; height:24px; accent-color:#22c55e;" {% if entry.is_done %}checked{% endif %} {% if periode.is_locked %}disabled{% endif %}>
+                            <div>
+                                <span style="font-size:14px; color:white; font-weight:800;">Tandai IKU Ini Telah Selesai</span>
+                                <p style="font-size:11px; color:#94a3b8; margin-top:2px;">Centang jika semua isian dan bukti sudah lengkap.</p>
+                            </div>
+                        </label>
+                        <div style="width:250px;">
+                            <button type="submit" class="save-btn" {% if periode.is_locked %}disabled{% endif %}>
+                                {% if periode.is_locked %}🔒 PERIODE DIKUNCI{% else %}
+                                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                SIMPAN PEKERJAAN
+                                {% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            {% endfor %}
+            
+        </div>
+    </div>
+</div>
+
+<!-- Custom Modal -->
+<div id="pikas-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:9999; align-items:center; justify-content:center; padding:20px; animation:fadeIn 0.2s ease-out;">
+    <div id="pikas-modal-card" style="background:rgba(15,20,40,0.95); border:1px solid rgba(148,163,184,0.1); border-radius:16px; padding:32px; width:100%; max-width:400px; text-align:center; box-shadow:0 25px 50px -12px rgba(0,0,0,0.5); transform:scale(0.95); transition:transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+        <div id="pikas-modal-icon" style="margin-bottom:20px;"></div>
+        <h3 id="pikas-modal-title" style="font-size:18px; font-weight:900; color:white; margin-bottom:12px;"></h3>
+        <p id="pikas-modal-message" style="font-size:13px; color:#94a3b8; line-height:1.5; margin-bottom:24px;"></p>
+        <button onclick="closeModal()" class="pikas-btn-primary" style="width:100%; padding:12px; font-size:13px;">Mengerti</button>
+    </div>
+</div>
+
+<script>
+    const details = document.querySelectorAll('.iku-detail');
+    const tabs = document.querySelectorAll('.iku-tab');
+    const emptyState = document.getElementById('empty-state');
+
+    details.forEach(d => d.style.display = 'none');
+
+    function showIkuDetail(id) {
+        details.forEach(d => d.style.display = 'none');
+        tabs.forEach(t => t.classList.remove('active'));
+        if (emptyState) emptyState.style.display = 'none';
+
+        const detail = document.getElementById('detail-' + id);
+        const tab = document.getElementById('tab-' + id);
+        
+        if (detail) detail.style.display = 'block';
+        if (tab) {
+            tab.classList.add('active');
+            tab.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const targetEntryId = "{{ target_entry_id }}";
+        if (targetEntryId) {
+            showIkuDetail(targetEntryId);
+        }
+    });
+
+    function filterIku() {
+        const input = document.getElementById('searchIku').value.toLowerCase();
+        tabs.forEach(tab => {
+            const text = tab.innerText.toLowerCase();
+            if (text.includes(input)) tab.style.display = '';
+            else tab.style.display = 'none';
+        });
+    }
+
+    function showModal(type, title, message) {
+        const modal = document.getElementById('pikas-modal');
+        const card = document.getElementById('pikas-modal-card');
+        const iconContainer = document.getElementById('pikas-modal-icon');
+        const titleEl = document.getElementById('pikas-modal-title');
+        const msgEl = document.getElementById('pikas-modal-message');
+        
+        // Pindahkan ke body agar overlay maksimal di atas segalanya
+        if (modal.parentElement !== document.body) {
+            document.body.appendChild(modal);
+        }
+        
+        modal.style.display = 'flex';
+        card.style.transform = 'scale(1)';
+        
+        titleEl.innerText = title;
+        msgEl.innerText = message;
+        
+        if (type === 'error') {
+            iconContainer.innerHTML = '<div style="width:64px;height:64px;border-radius:50%;background:rgba(239,68,68,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto;"><svg width="32" height="32" fill="none" stroke="#ef4444" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg></div>';
+        } else if (type === 'success') {
+            iconContainer.innerHTML = '<div style="width:64px;height:64px;border-radius:50%;background:rgba(34,197,94,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto;"><svg width="32" height="32" fill="none" stroke="#22c55e" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></div>';
+        } else {
+            iconContainer.innerHTML = '';
+        }
+    }
+
+    function closeModal() {
+        const modal = document.getElementById('pikas-modal');
+        const card = document.getElementById('pikas-modal-card');
+        card.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 200);
+    }
+
+    async function saveEntry(e, ikuId, entryId) {
+        e.preventDefault();
+        const form = e.target;
+        
+        const data = {
+            realisasi: form.querySelector('[name="realisasi"]').value,
+            kendala: form.querySelector('[name="kendala"]').value,
+            solusi: form.querySelector('[name="solusi"]').value,
+            rtl: form.querySelector('[name="rtl"]').value,
+            pic_rtl: form.querySelector('[name="pic_rtl"]').value,
+            batas_waktu_rtl: form.querySelector('[name="batas_waktu_rtl"]').value,
+            is_bukti_kinerja_done: form.querySelector('[name="is_bukti_kinerja_done"]').checked,
+            is_bukti_solusi_done: form.querySelector('[name="is_bukti_solusi_done"]').checked,
+            is_bukti_tl_done: form.querySelector('[name="is_bukti_tl_done"]').checked,
+            is_done: form.querySelector('[name="is_done"]').checked,
+        };
+        
+        const px = form.querySelector('[name="proksi_x_realisasi"]');
+        if (px) data.proksi_x_realisasi = px.value;
+        const py = form.querySelector('[name="proksi_y_realisasi"]');
+        if (py) data.proksi_y_realisasi = py.value;
+        
+        const btn = form.querySelector('.save-btn');
+        const originalText = btn.innerHTML;
+        
+        if (data.is_done) {
+            const requiredFields = [
+                { val: data.realisasi, name: 'Realisasi TW Berjalan' },
+                { val: data.kendala, name: 'Kendala' },
+                { val: data.solusi, name: 'Solusi' },
+                { val: data.rtl, name: 'Rencana Tindak Lanjut (RTL)' },
+                { val: data.pic_rtl, name: 'PIC RTL' },
+                { val: data.batas_waktu_rtl, name: 'Batas Waktu RTL' }
+            ];
+            if (px) requiredFields.push({ val: data.proksi_x_realisasi, name: 'Realisasi Proksi X' });
+            if (py) requiredFields.push({ val: data.proksi_y_realisasi, name: 'Realisasi Proksi Y' });
+
+            for (let f of requiredFields) {
+                if (!f.val || String(f.val).trim() === '') {
+                    showModal('error', 'Validasi Gagal', 'Tidak dapat menandai selesai: Kolom ' + f.name + ' masih kosong.');
+                    return;
+                }
+            }
+
+            if (!data.is_bukti_kinerja_done || !data.is_bukti_solusi_done || !data.is_bukti_tl_done) {
+                showModal('error', 'Validasi Gagal', 'Tidak dapat menandai selesai: Seluruh checkbox Bukti Kinerja, Solusi, dan RTL harus dichecklist.');
+                return;
+            }
+        }
+        
+        btn.innerHTML = '<span class="tree-spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;"></span> Menyimpan...';
+        btn.disabled = true;
+        
+        try {
+            const res = await fetch('/api/entry/' + ikuId + '/', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            if(res.ok) {
+                btn.innerHTML = '✓ Tersimpan!';
+                btn.style.background = '#22c55e';
+                
+                // Update sidebar status
+                const statusSpan = document.getElementById('tab-status-' + entryId);
+                if (statusSpan) {
+                    if (data.is_done) {
+                        statusSpan.innerText = 'Selesai';
+                        statusSpan.style.color = '#22c55e';
+                    } else {
+                        statusSpan.innerText = 'Pending';
+                        statusSpan.style.color = '#f97316';
+                    }
+                }
+                const editedSpan = document.getElementById('tab-edited-' + entryId);
+                if (editedSpan) {
+                    editedSpan.style.display = 'inline-block';
+                }
+                
+                showModal('success', 'Berhasil', 'Pekerjaan Anda berhasil disimpan ke sistem.');
+                
+                setTimeout(() => { 
+                    btn.innerHTML = originalText; 
+                    btn.style.background = ''; 
+                    btn.disabled = false;
+                }, 2000);
+            } else {
+                const err = await res.json();
+                showModal('error', 'Gagal Menyimpan', err.error || 'Terjadi kesalahan sistem.');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        } catch(err) {
+            showModal('error', 'Kesalahan Jaringan', 'Periksa koneksi internet Anda dan coba lagi.');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+</script>
+{% endblock %}

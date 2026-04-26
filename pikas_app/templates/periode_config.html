@@ -10,7 +10,9 @@
 <!-- Breadcrumb & Header -->
 <div style="margin-bottom:20px;">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <a href="{% url 'kertas_kerja' %}" style="font-size:12px;font-weight:700;color:#818cf8;text-decoration:none;">← Kertas Kerja</a>
+        <a href="{% url 'dashboard' %}" style="font-size:12px;font-weight:700;color:#818cf8;text-decoration:none;">← Dashboard</a>
+        <span style="color:#334155;font-size:12px;">›</span>
+        <a href="{% url 'kertas_kerja' %}" style="font-size:12px;font-weight:700;color:#818cf8;text-decoration:none;">Manajemen Kertas Kerja</a>
         <span style="color:#334155;font-size:12px;">›</span>
         <span style="font-size:12px;font-weight:700;color:#94a3b8;">{{ periode.label }}</span>
     </div>

@@ -404,7 +404,14 @@ def api_periode_config(request, periode_id):
 @role_required(['ADMIN', 'OPERATOR'])
 def iku_list_view(request):
     config = get_active_config()
-    periode = config.active_periode if config else None
+    periodes = PeriodeKertasKerja.objects.all().order_by('-tahun', '-triwulan')
+    
+    periode_id = request.GET.get('periode')
+    if periode_id:
+        periode = get_object_or_404(PeriodeKertasKerja, id=periode_id)
+    else:
+        periode = config.active_periode if config else None
+        
     if not periode:
         return render(request, 'iku_list.html', {'error': 'Sistem belum dikonfigurasi.'})
 
@@ -417,6 +424,7 @@ def iku_list_view(request):
 
     return render(request, 'iku_list.html', {
         'periode': periode,
+        'periodes': periodes,
         'entries': qs,
     })
 
@@ -424,12 +432,23 @@ def iku_list_view(request):
 @login_required
 def operator_workspace_view(request, iku_id):
     config = get_active_config()
-    periode = config.active_periode if config else None
-    if not periode:
-        return render(request, 'dashboard.html', {'error': 'System not configured.'})
-
+    periodes = PeriodeKertasKerja.objects.all().order_by('-tahun', '-triwulan')
+    
     iku = get_object_or_404(MasterIKU, id=iku_id)
-    entry, _ = FRAEntry.objects.get_or_create(iku=iku)
+    periode = iku.periode  # Selalu gunakan periode dari IKU yang dipilih
+    
+    target_entry, _ = FRAEntry.objects.get_or_create(iku=iku)
+
+    # Fetch entries for sidebar list
+    qs = FRAEntry.objects.filter(
+        iku__periode=periode
+    ).select_related('iku', 'pic_tim_kerja').order_by('iku__kode_indikator')
+
+    if request.user.role == 'OPERATOR':
+        qs = qs.filter(pic_tim_kerja=request.user)
+
+    total_iku = qs.count()
+    done_iku = qs.filter(is_done=True).count()
 
     # Auto-Populate: Get previous RTL
     previous_rtl = ""
@@ -448,14 +467,16 @@ def operator_workspace_view(request, iku_id):
     except PeriodeKertasKerja.DoesNotExist:
         pass
 
-    return render(request, 'entry_form.html', {
+    return render(request, 'iku_workspace.html', {
         'periode': periode,
-        'iku': iku,
-        'entry': entry,
+        'periodes': periodes,
+        'target_entry_id': str(target_entry.id),
+        'entries': qs,
+        'total': total_iku,
+        'done': done_iku,
         'previous_rtl': previous_rtl,
         'config_mapping_json': json.dumps(iku.cells),
     })
-
 
 @csrf_exempt
 @login_required
@@ -502,6 +523,12 @@ def update_entry_api(request, iku_id):
             entry.link_bukti_tl_sebelumnya = data['link_bukti_tl_sebelumnya']
         if 'link_solusi' in data:
             entry.link_solusi = data['link_solusi']
+        if 'is_bukti_kinerja_done' in data:
+            entry.is_bukti_kinerja_done = bool(data['is_bukti_kinerja_done'])
+        if 'is_bukti_tl_done' in data:
+            entry.is_bukti_tl_done = bool(data['is_bukti_tl_done'])
+        if 'is_bukti_solusi_done' in data:
+            entry.is_bukti_solusi_done = bool(data['is_bukti_solusi_done'])
         if 'is_done' in data:
             entry.is_done = bool(data['is_done'])
 

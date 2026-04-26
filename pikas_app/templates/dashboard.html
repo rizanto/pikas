@@ -126,7 +126,7 @@
                                 <div style="font-size:13px; font-weight:800; color:#f1f5f9;">R: {{ entry.realisasi|default:"-" }}</div>
                                 {% if entry.iku.has_proxy %}
                                 <div style="font-size:10px; font-weight:700; color:#94a3b8; margin-top:4px;">
-                                    X:{{ entry.realisasi_proksi_x|default:"-" }} / Y:{{ entry.realisasi_proksi_y|default:"-" }}
+                                    X:{{ entry.proksi_x_realisasi|default:"-" }} / Y:{{ entry.proksi_y_realisasi|default:"-" }}
                                 </div>
                                 {% endif %}
                             </td>
@@ -135,9 +135,9 @@
                                     <span class="status-chip {% if entry.kendala %}filled-k{% endif %}" title="Kendala">K</span>
                                     <span class="status-chip {% if entry.solusi %}filled-s{% endif %}" title="Solusi">S</span>
                                     <span class="status-chip status-chip-wide {% if entry.rtl %}filled-r{% endif %}" title="RTL">RTL</span>
-                                    <span class="status-chip status-chip-wide {% if entry.link_bukti_kinerja %}filled-b{% endif %}" title="Bukti Kinerja">BK</span>
-                                    <span class="status-chip status-chip-wide {% if entry.link_bukti_solusi %}filled-b{% endif %}" title="Bukti Solusi">BS</span>
-                                    <span class="status-chip status-chip-wide {% if entry.link_bukti_rtl_sebelumnya %}filled-b{% endif %}" title="Bukti RTL">BR</span>
+                                    <span class="status-chip status-chip-wide {% if entry.is_bukti_kinerja_done %}filled-b{% endif %}" title="Bukti Kinerja">BK</span>
+                                    <span class="status-chip status-chip-wide {% if entry.is_bukti_solusi_done %}filled-b{% endif %}" title="Bukti Solusi">BS</span>
+                                    <span class="status-chip status-chip-wide {% if entry.is_bukti_tl_done %}filled-b{% endif %}" title="Bukti RTL">BR</span>
                                 </div>
                             </td>
                             <td style="padding:14px 16px; text-align:right; vertical-align:top;">

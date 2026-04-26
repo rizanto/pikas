@@ -79,7 +79,12 @@ def pull_periode_data(gsheet_id, periode):
         return
 
     try:
-        values_response = spreadsheet.values_batch_get(ranges_to_fetch)
+        # Menggunakan FORMATTED_VALUE agar nilai (termasuk hasil formula) diambil sebagai string.
+        # Ini menghindari masalah filter 'default' di Django yang menganggap angka 0 sebagai False.
+        values_response = spreadsheet.values_batch_get(
+            ranges_to_fetch, 
+            params={'valueRenderOption': 'FORMATTED_VALUE'}
+        )
     except Exception as e:
         raise ValueError(f"Failed to batch_get from Google Sheets: {str(e)}")
 
@@ -119,6 +124,7 @@ def pull_periode_data(gsheet_id, periode):
             'kode_sasaran': cells.get('kode_sasaran'),
             'indikator': cells.get('indikator'),
             'satuan': cells.get('satuan'),
+            'target': cells.get('target'),  # Menambahkan sync untuk target
             'jenis_iku': cells.get('jenis_iku'),
             'jenis_periode': cells.get('jenis_periode'),
             'jenis_persen': cells.get('jenis_persen'),
@@ -128,7 +134,11 @@ def pull_periode_data(gsheet_id, periode):
         
         for field, cell_coord in meta_map.items():
             if cell_coord and f"{sheet_name}!{cell_coord}" in fetched_data:
-                val = str(fetched_data[f"{sheet_name}!{cell_coord}"]).strip()
+                raw_val = fetched_data[f"{sheet_name}!{cell_coord}"]
+                if raw_val is None:
+                    continue
+                    
+                val = str(raw_val).strip()
                 
                 # Handle Boolean conversion for jenis_persen
                 if field == 'jenis_persen':
