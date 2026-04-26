@@ -1,26 +1,23 @@
 {% extends 'crm_base.html' %}
-{% block title %}Review {{ periode.label }} — PIKAS{% endblock %}
-{% block header_title %}Review Kertas Kerja{% endblock %}
+{% block title %}Detail Review — PIKAS{% endblock %}
+{% block header_title %}Detail IKU Dashboard{% endblock %}
 
 {% block content %}
 <div style="margin-bottom:16px;">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <a href="{% url 'kertas_kerja' %}" style="font-size:12px;font-weight:700;color:#818cf8;text-decoration:none;">← Kertas Kerja</a>
+        <a href="{% url 'dashboard' %}" style="font-size:12px;font-weight:700;color:#818cf8;text-decoration:none;">← Dashboard</a>
         <span style="color:#334155;font-size:12px;">›</span>
-        <a href="{% url 'periode_config' periode.id %}" style="font-size:12px;font-weight:700;color:#818cf8;text-decoration:none;">{{ periode.label }}</a>
-        <span style="color:#334155;font-size:12px;">›</span>
-        <span style="font-size:12px;font-weight:700;color:#94a3b8;">Review</span>
+        <span style="font-size:12px;font-weight:700;color:#94a3b8;">Review Detail</span>
     </div>
     
     <!-- Header Minimalis & Status Pills -->
     <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;">
         <div>
-            <h1 style="font-size:24px;font-weight:900;color:white;margin-bottom:8px;">Review — {{ periode.label }}</h1>
+            <h1 style="font-size:24px;font-weight:900;color:white;margin-bottom:8px;">Detail IKU — {{ periode.label }}</h1>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
                 <span style="font-size:11px;font-weight:700;color:#94a3b8;background:rgba(15,20,40,0.6);padding:4px 12px;border-radius:20px;border:1px solid rgba(148,163,184,0.08);">Total {{ total }} IKU</span>
                 <span style="font-size:11px;font-weight:700;color:#22c55e;background:rgba(34,197,94,0.1);padding:4px 12px;border-radius:20px;border:1px solid rgba(34,197,94,0.15);">{{ done }} Selesai</span>
                 <span style="font-size:11px;font-weight:700;color:#f97316;background:rgba(249,115,22,0.1);padding:4px 12px;border-radius:20px;border:1px solid rgba(249,115,22,0.15);">{% widthratio done 1 1 as done_int %}{{ total|add:"-"|add:done }} Pending</span>
-                <span style="font-size:11px;font-weight:700;color:{% if periode.is_locked %}#f87171{% else %}#3b82f6{% endif %};background:rgba({% if periode.is_locked %}239,68,68{% else %}59,130,246{% endif %},0.1);padding:4px 12px;border-radius:20px;border:1px solid rgba({% if periode.is_locked %}239,68,68{% else %}59,130,246{% endif %},0.15);">{% if periode.is_locked %}🔒 Locked{% else %}🔓 Open{% endif %}</span>
             </div>
         </div>
     </div>
@@ -357,12 +354,11 @@
         }
     }
 
-    // Auto-select IKU if iku_id parameter is present in URL
+    // Auto-select IKU passed from dashboard
     document.addEventListener("DOMContentLoaded", function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const ikuId = urlParams.get('iku_id');
-        if (ikuId) {
-            showIkuDetail(ikuId);
+        const targetEntryId = "{{ target_entry_id }}";
+        if (targetEntryId) {
+            showIkuDetail(targetEntryId);
         }
     });
 

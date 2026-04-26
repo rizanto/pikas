@@ -28,7 +28,13 @@ def logout_view(request):
 @login_required
 def dashboard_view(request):
     config = get_active_config()
-    periode = config.active_periode if config else None
+    periodes = PeriodeKertasKerja.objects.all().order_by('-tahun', '-triwulan')
+    
+    periode_id = request.GET.get('periode')
+    if periode_id:
+        periode = get_object_or_404(PeriodeKertasKerja, id=periode_id)
+    else:
+        periode = config.active_periode if config else None
 
     if not periode:
         if request.user.role == 'ADMIN':
@@ -39,18 +45,59 @@ def dashboard_view(request):
 
     entries = FRAEntry.objects.filter(
         iku__periode=periode
-    ).select_related('iku', 'pic_tim_kerja')
+    ).select_related('iku', 'pic_tim_kerja').order_by('iku__kode_indikator')
 
     total_iku = entries.count()
     done_iku = entries.filter(is_done=True).count()
     pending_iku = total_iku - done_iku
 
+    # Operator progress
+    operators = CustomUser.objects.filter(role='OPERATOR')
+    operator_progress = []
+    for op in operators:
+        op_entries = entries.filter(pic_tim_kerja=op)
+        op_total = op_entries.count()
+        if op_total > 0:
+            op_done = op_entries.filter(is_done=True).count()
+            operator_progress.append({
+                'user': op,
+                'total': op_total,
+                'done': op_done,
+                'pending': op_total - op_done,
+                'percent': int((op_done / op_total) * 100) if op_total > 0 else 0
+            })
+    
+    # Sort operator progress by pending count descending
+    operator_progress.sort(key=lambda x: x['pending'], reverse=True)
+
     return render(request, 'dashboard.html', {
         'periode': periode,
+        'periodes': periodes,
         'entries': entries,
         'total_iku': total_iku,
         'done_iku': done_iku,
         'pending_iku': pending_iku,
+        'operator_progress': operator_progress,
+    })
+
+
+@login_required
+def dashboard_review_view(request, entry_id):
+    target_entry = get_object_or_404(FRAEntry.objects.select_related('iku', 'pic_tim_kerja', 'iku__periode'), id=entry_id)
+    periode = target_entry.iku.periode
+    
+    entries = FRAEntry.objects.filter(
+        iku__periode=periode
+    ).select_related('iku', 'pic_tim_kerja').order_by('iku__kode_indikator')
+    total = entries.count()
+    done = entries.filter(is_done=True).count()
+    
+    return render(request, 'dashboard_review.html', {
+        'periode': periode,
+        'entries': entries,
+        'total': total,
+        'done': done,
+        'target_entry_id': str(target_entry.id),
     })
 
 

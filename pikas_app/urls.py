@@ -8,6 +8,7 @@ urlpatterns = [
 
     # Dashboard
     path('', views.dashboard_view, name='dashboard'),
+    path('dashboard/review/<uuid:entry_id>/', views.dashboard_review_view, name='dashboard_review'),
 
     # Pengguna
     path('pengguna/', views.pengguna_view, name='pengguna'),

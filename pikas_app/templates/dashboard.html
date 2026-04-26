@@ -12,69 +12,152 @@
     </div>
 </div>
 {% else %}
-<div style="margin-bottom:24px;">
-    <h1 style="font-size:26px;font-weight:900;color:white;">Capaian Kinerja BPS</h1>
-    <p style="color:#94a3b8;font-size:14px;font-weight:600;margin-top:4px;">Rekapitulasi progres kertas kerja — Periode {{ periode.label }}</p>
+
+<style>
+    .status-chip {
+        font-size:9px; font-weight:900; border-radius:6px; width:24px; height:24px;
+        display:flex; align-items:center; justify-content:center;
+        background:rgba(30,41,59,0.5); color:#475569; border:1px solid rgba(71,85,105,0.3);
+    }
+    .status-chip-wide { width:auto; padding:0 6px; }
+    
+    .filled-k { background:linear-gradient(135deg,#7c3aed,#a855f7); color:white; border:none; }
+    .filled-s { background:linear-gradient(135deg,#ec4899,#f472b6); color:white; border:none; }
+    .filled-r { background:linear-gradient(135deg,#6366f1,#818cf8); color:white; border:none; }
+    .filled-b { background:linear-gradient(135deg,#14b8a6,#0ea5e9); color:white; border:none; }
+</style>
+
+<!-- Header dengan Filter -->
+<div style="margin-bottom:24px; display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px;">
+    <div>
+        <h1 style="font-size:26px;font-weight:900;color:white;">Capaian Kinerja BPS</h1>
+        <p style="color:#94a3b8;font-size:14px;font-weight:600;margin-top:4px;">Rekapitulasi progres kertas kerja</p>
+    </div>
+    
+    <form method="GET" style="display:flex; align-items:center; gap:12px;">
+        <label style="font-size:12px; font-weight:800; color:#94a3b8; text-transform:uppercase;">Periode:</label>
+        <select name="periode" class="pikas-input" style="width:auto; min-width:180px; font-size:13px; padding:8px 12px;" onchange="this.form.submit()">
+            {% for p in periodes %}
+            <option value="{{ p.id }}" {% if p.id == periode.id %}selected{% endif %}>{{ p.tahun }} TW{{ p.triwulan }} ({{ p.sheet_name }})</option>
+            {% endfor %}
+        </select>
+    </form>
 </div>
 
-<!-- Stat Cards -->
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px;">
-    <div class="glass-card" style="padding:20px;position:relative;overflow:hidden;">
-        <div style="position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(168,85,247,0.08);"></div>
-        <p style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Total IKU Aktif</p>
-        <p style="font-size:32px;font-weight:900;color:white;">{{ total_iku }}</p>
+<!-- Stat Cards Ultra-Compact -->
+<div style="display:grid;grid-template-columns:repeat(5, 1fr);gap:12px;margin-bottom:20px;">
+    <div class="glass-card" style="padding:12px 16px;">
+        <p style="font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Total IKU</p>
+        <p style="font-size:24px;font-weight:900;color:white;">{{ total_iku }}</p>
     </div>
-    <div class="glass-card" style="padding:20px;position:relative;overflow:hidden;">
-        <div style="position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(34,197,94,0.08);"></div>
-        <p style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Selesai (Done)</p>
-        <p style="font-size:32px;font-weight:900;color:#22c55e;">{{ done_iku }}</p>
+    <div class="glass-card" style="padding:12px 16px;">
+        <p style="font-size:10:px;font-weight:800;color:#22c55e;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Selesai</p>
+        <p style="font-size:24px;font-weight:900;color:#22c55e;">{{ done_iku }}</p>
     </div>
-    <div class="glass-card" style="padding:20px;position:relative;overflow:hidden;">
-        <div style="position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(249,115,22,0.08);"></div>
-        <p style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Belum Selesai</p>
-        <p style="font-size:32px;font-weight:900;color:#f97316;">{{ pending_iku }}</p>
+    <div class="glass-card" style="padding:12px 16px;">
+        <p style="font-size:10px;font-weight:800;color:#f97316;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Pending</p>
+        <p style="font-size:24px;font-weight:900;color:#f97316;">{{ pending_iku }}</p>
+    </div>
+    <div class="glass-card" style="padding:12px 16px;">
+        <p style="font-size:10px;font-weight:800;color:#a855f7;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Avg. Progres</p>
+        <p style="font-size:24px;font-weight:900;color:#a855f7;">{% if total_iku > 0 %}{% widthratio done_iku total_iku 100 %}{% else %}0{% endif %}<span style="font-size:14px; opacity:0.7;">%</span></p>
+    </div>
+    <div class="glass-card" style="padding:12px 16px;">
+        <p style="font-size:10px;font-weight:800;color:#60a5fa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Tim Terlibat</p>
+        <p style="font-size:24px;font-weight:900;color:#60a5fa;">{{ operator_progress|length }}</p>
     </div>
 </div>
 
-<!-- IKU Progress List -->
-<div class="glass-card" style="overflow:hidden;">
-    <div style="padding:16px 20px;border-bottom:1px solid rgba(148,163,184,0.06);display:flex;justify-content:space-between;align-items:center;">
-        <h3 style="font-size:15px;font-weight:800;color:white;">Status Matriks IKU</h3>
-        <span style="font-size:11px;font-weight:700;color:#94a3b8;background:rgba(15,20,40,0.6);padding:4px 12px;border-radius:20px;border:1px solid rgba(148,163,184,0.08);">{{ entries|length }} indikator</span>
-    </div>
-    <div style="max-height:500px;overflow-y:auto;">
-        {% for entry in entries %}
-        <div style="padding:14px 20px;border-bottom:1px solid rgba(148,163,184,0.04);display:flex;align-items:center;gap:14px;transition:background 0.15s;" onmouseover="this.style.background='rgba(148,163,184,0.02)'" onmouseout="this.style.background='transparent'">
-            <div style="flex:1;min-width:0;">
-                <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-                    <span style="font-size:11px;font-weight:900;color:#a855f7;background:rgba(168,85,247,0.1);padding:1px 6px;border-radius:4px;">{{ entry.iku.kode_indikator }}</span>
-                    {% if entry.is_done %}
-                    <span style="font-size:10px;font-weight:800;color:#22c55e;background:rgba(34,197,94,0.1);padding:2px 8px;border-radius:6px;border:1px solid rgba(34,197,94,0.2);">Selesai</span>
-                    {% else %}
-                    <span style="font-size:10px;font-weight:800;color:#f97316;background:rgba(249,115,22,0.1);padding:2px 8px;border-radius:6px;border:1px solid rgba(249,115,22,0.2);">Pending</span>
-                    {% endif %}
+<!-- Main Grid Layout (1/4 - 3/4) with Fixed Height -->
+<div style="display:grid; grid-template-columns: 1fr 3fr; gap:16px; height: calc(100vh - 260px); min-height: 400px; margin-bottom: 20px;">
+    
+    <!-- LEFT: Operator List (1/4) -->
+    <div style="display:flex; flex-direction:column; gap:12px; height: 100%;">
+        <h3 style="font-size:12px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;padding-left:4px;flex-shrink:0;">Progres Tim Kerja</h3>
+        <div class="glass-card" style="flex:1; padding:10px; display:flex; flex-direction:column; gap:6px; overflow-y: auto; scrollbar-width: thin;">
+            {% for op in operator_progress %}
+            <div style="padding:12px; border-radius:10px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.03); flex-shrink:0;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="font-size:12px; font-weight:800; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:110px;">{{ op.user.first_name|default:op.user.username }}</span>
+                    <span style="font-size:11px; font-weight:800; color:{% if op.pending == 0 %}#22c55e{% else %}#f97316{% endif %};">{{ op.done }}/{{ op.total }}</span>
                 </div>
-                <p style="font-size:13px;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ entry.iku.indikator }}</p>
-                <p style="font-size:11px;color:#64748b;margin-top:2px;">PIC: {{ entry.pic_tim_kerja.username|default:"—" }}</p>
+                <div style="height:4px; background:rgba(255,255,255,0.05); border-radius:2px; overflow:hidden;">
+                    <div style="height:100%; width:{{ op.percent }}%; background:{% if op.pending == 0 %}#22c55e{% else %}linear-gradient(90deg, #a855f7, #ec4899){% endif %}; transition:width 0.5s;"></div>
+                </div>
             </div>
-            <!-- Indicator chips -->
-            <div style="display:flex;gap:3px;flex-shrink:0;">
-                <span style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;border-radius:6px;{% if entry.kendala %}background:linear-gradient(135deg,#7c3aed,#a855f7);color:white;{% else %}background:rgba(30,41,59,0.5);color:#475569;border:1px solid rgba(71,85,105,0.3);{% endif %}" title="Kendala">K</span>
-                <span style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;border-radius:6px;{% if entry.solusi %}background:linear-gradient(135deg,#ec4899,#f472b6);color:white;{% else %}background:rgba(30,41,59,0.5);color:#475569;border:1px solid rgba(71,85,105,0.3);{% endif %}" title="Solusi">S</span>
-                <span style="width:28px;height:24px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;border-radius:6px;{% if entry.rtl %}background:linear-gradient(135deg,#6366f1,#818cf8);color:white;{% else %}background:rgba(30,41,59,0.5);color:#475569;border:1px solid rgba(71,85,105,0.3);{% endif %}" title="RTL">RTL</span>
-            </div>
-            <div style="text-align:right;flex-shrink:0;min-width:80px;">
-                <p style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;">Realisasi</p>
-                <p style="font-size:16px;font-weight:900;color:white;">{{ entry.realisasi|default:"—" }}</p>
+            {% empty %}
+            <p style="font-size:11px; color:#64748b; padding:20px; text-align:center;">Tidak ada data tim</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- RIGHT: IKU Table (3/4) -->
+    <div style="display:flex; flex-direction:column; gap:12px; height: 100%;">
+        <h3 style="font-size:12px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;padding-left:4px;flex-shrink:0;">Daftar Status IKU</h3>
+        <div class="glass-card" style="flex:1; overflow:hidden; padding:0; display:flex; flex-direction:column;">
+            <div style="flex:1; overflow:auto; scrollbar-width: thin;">
+                <table style="width:100%; border-collapse:collapse; min-width:900px; text-align:left;">
+                    <thead style="position: sticky; top:0; z-index:5;">
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.06); background:rgba(15,20,40,0.9); backdrop-filter:blur(10px); color:#94a3b8; font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:1px;">
+                            <th style="padding:14px 16px; width:80px;">Kode</th>
+                            <th style="padding:14px 16px;">Indikator Kinerja</th>
+                            <th style="padding:14px 16px; width:100px;">PIC</th>
+                            <th style="padding:14px 16px; width:140px;">Capaian</th>
+                            <th style="padding:14px 16px; width:220px;">Isian & Bukti</th>
+                            <th style="padding:14px 16px; text-align:right;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in entries %}
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.03); transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                            <td style="padding:14px 16px; vertical-align:top;">
+                                <span style="font-size:10px;font-weight:900;color:#a855f7;background:rgba(168,85,247,0.1);padding:2px 6px;border-radius:4px;border:1px solid rgba(168,85,247,0.2);">{{ entry.iku.kode_indikator }}</span>
+                            </td>
+                            <td style="padding:14px 16px; vertical-align:top;">
+                                <p style="font-size:13px;font-weight:700;color:#f1f5f9; line-height:1.5; white-space:normal; min-width:220px;">{{ entry.iku.indikator }}</p>
+                                {% if not entry.is_done %}
+                                <span style="font-size:9px; font-weight:800; color:#f97316; margin-top:6px; display:inline-block; text-transform:uppercase; letter-spacing:0.5px;">● Belum Selesai</span>
+                                {% else %}
+                                <span style="font-size:9px; font-weight:800; color:#22c55e; margin-top:6px; display:inline-block; text-transform:uppercase; letter-spacing:0.5px;">● Selesai</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding:14px 16px; vertical-align:top; font-size:12px; font-weight:700; color:#cbd5e1;">{{ entry.pic_tim_kerja.username|default:"—" }}</td>
+                            <td style="padding:14px 16px; vertical-align:top;">
+                                <div style="font-size:13px; font-weight:800; color:#f1f5f9;">R: {{ entry.realisasi|default:"-" }}</div>
+                                {% if entry.iku.has_proxy %}
+                                <div style="font-size:10px; font-weight:700; color:#94a3b8; margin-top:4px;">
+                                    X:{{ entry.realisasi_proksi_x|default:"-" }} / Y:{{ entry.realisasi_proksi_y|default:"-" }}
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td style="padding:14px 16px; vertical-align:top;">
+                                <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                                    <span class="status-chip {% if entry.kendala %}filled-k{% endif %}" title="Kendala">K</span>
+                                    <span class="status-chip {% if entry.solusi %}filled-s{% endif %}" title="Solusi">S</span>
+                                    <span class="status-chip status-chip-wide {% if entry.rtl %}filled-r{% endif %}" title="RTL">RTL</span>
+                                    <span class="status-chip status-chip-wide {% if entry.link_bukti_kinerja %}filled-b{% endif %}" title="Bukti Kinerja">BK</span>
+                                    <span class="status-chip status-chip-wide {% if entry.link_bukti_solusi %}filled-b{% endif %}" title="Bukti Solusi">BS</span>
+                                    <span class="status-chip status-chip-wide {% if entry.link_bukti_rtl_sebelumnya %}filled-b{% endif %}" title="Bukti RTL">BR</span>
+                                </div>
+                            </td>
+                            <td style="padding:14px 16px; text-align:right; vertical-align:top;">
+                                <a href="{% url 'dashboard_review' entry.id %}" class="pikas-btn-primary" style="padding:6px 12px; font-size:11px; text-decoration:none; display:inline-block; border-radius:6px; white-space:nowrap;">Buka Review</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
-        {% empty %}
+    </div>
+</div>
+
+        {% if not entries %}
         <div style="padding:48px;text-align:center;">
-            <svg width="40" height="40" fill="none" stroke="#334155" viewBox="0 0 24 24" style="margin:0 auto 12px;display:block;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-            <p style="font-size:14px;font-weight:700;color:#94a3b8;">Belum ada data IKU</p>
-            <p style="font-size:12px;color:#475569;margin-top:4px;">Admin perlu menyetel Kertas Kerja dan PULL data.</p>
+            <svg width="40" height="40" fill="none" stroke="#475569" viewBox="0 0 24 24" style="margin:0 auto 12px;display:block;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+            <p style="font-size:14px;font-weight:700;color:#94a3b8;">Belum ada data IKU di periode ini</p>
         </div>
-        {% endfor %}
+        {% endif %}
     </div>
 </div>
 {% endif %}
