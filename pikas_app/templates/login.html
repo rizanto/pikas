@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="{% static 'img/pikas-logo-xs.png' %}">
     <title>Login - PIKAS</title>
     <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap" rel="stylesheet">
     <style>
@@ -77,13 +78,13 @@
         /* ===== Glass Card ===== */
         .glass-card {
             position: relative; z-index: 10;
-            width: 100%; max-width: 440px;
-            padding: 48px 40px;
+            width: 100%; max-width: 400px;
+            padding: 36px 32px;
             background: rgba(15, 23, 42, 0.55);
             backdrop-filter: blur(40px) saturate(1.5);
             -webkit-backdrop-filter: blur(40px) saturate(1.5);
             border: 1px solid rgba(148, 163, 184, 0.12);
-            border-radius: 24px;
+            border-radius: 20px;
             box-shadow:
                 0 0 0 1px rgba(255,255,255,0.03) inset,
                 0 32px 64px -12px rgba(0,0,0,0.6),
@@ -92,7 +93,7 @@
 
         /* Logo */
         .logo-text {
-            font-size: 36px; font-weight: 900; letter-spacing: -1px;
+            font-size: 30px; font-weight: 900; letter-spacing: -1px;
             background: linear-gradient(135deg, #c084fc, #f472b6, #818cf8);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -209,10 +210,10 @@
     <div class="card-glow"></div>
 
     <div class="glass-card">
-        <div style="text-align:center; margin-bottom: 36px;">
-            <img src="{% static 'img/pikas-logo.png' %}" alt="Logo" style="width:80px; height:80px; object-fit:contain; margin-bottom:12px;">
+        <div style="text-align:center; margin-bottom: 28px;">
+            <img src="{% static 'img/pikas-logo-lg.png' %}" alt="Logo" style="width:100px; height:100px; object-fit:contain; margin-bottom:10px;">
             <div class="logo-text">PIKAS</div>
-            <div class="logo-sub">Performance Indicators Knowledgebase<br>Accountability System</div>
+            <div style="color: #94a3b8; font-size: 11px; margin-top: 4px; font-weight: 600; line-height: 1.5;">Performance Indicators Knowledgebase<br>Accountability System</div>
         </div>
 
         {% if error %}
@@ -246,6 +247,11 @@
                 </button>
             </div>
         </form>
+
+        <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(148,163,184,0.08); text-align: center;">
+            <div style="font-size: 9px; font-weight: 800; color: rgba(148,163,184,0.3); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px;">Portal PIKAS</div>
+            <div style="font-size: 12px; font-weight: 700; color: #64748b; letter-spacing: 0.5px;">{{ satker_name }}</div>
+        </div>
     </div>
 
     <script>

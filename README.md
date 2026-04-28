@@ -1,6 +1,6 @@
 # PIKAS (Performance Indicators Knowledgebase Accountability System)
 
-PIKAS adalah portal monitoring Indikator Kinerja Utama (IKU) dan Anggaran Sektoral yang dirancang untuk Badan Pusat Statistik (BPS). Sistem ini mengintegrasikan data dari Google Sheets secara real-time ke dalam dashboard monitoring yang modern dan interaktif.
+PIKAS adalah portal manajemen SAKIP mulai dari monitoring hingga pengisian kertas kerja yang dirancang untuk Badan Pusat Statistik (BPS). Sistem ini mengintegrasikan data dari Google Sheets secara real-time ke dalam dashboard monitoring yang modern dan interaktif.
 
 ## 🚀 Fitur Utama
 
@@ -22,7 +22,7 @@ PIKAS adalah portal monitoring Indikator Kinerja Utama (IKU) dan Anggaran Sektor
 
 - Python 3.10+
 - Service Account Google Cloud (dengan akses Google Sheets & Drive API)
-- File `service_account.json` diletakkan di direktori root.
+- Kredensial Service Account (bisa berupa file `service_account.json` di root atau string JSON di environment variable `GOOGLE_SERVICE_ACCOUNT_JSON`).
 
 ## 🔧 Instalasi
 
@@ -65,4 +65,3 @@ PIKAS adalah portal monitoring Indikator Kinerja Utama (IKU) dan Anggaran Sektor
 Proyek ini dikembangkan untuk penggunaan internal Badan Pusat Statistik.
 
 ---
-*Developed with ❤️ for BPS Indonesia*

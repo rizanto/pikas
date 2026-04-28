@@ -1,21 +1,18 @@
 {% extends 'crm_base.html' %}
 {% block title %}Konfigurasi {{ periode.label }} — PIKAS{% endblock %}
-{% block header_title %}Konfigurasi Periode{% endblock %}
+{% block breadcrumbs %}
+<a href="{% url 'kertas_kerja' %}" class="breadcrumb-back">← Manajemen Kertas Kerja</a>
+<span class="breadcrumb-sep">›</span>
+<span class="breadcrumb-item">Konfigurasi Periode {{ periode.label }}</span>
+{% endblock %}
 
 {% block extra_head %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.38.0/min/vs/loader.min.js"></script>
 {% endblock %}
 
 {% block content %}
-<!-- Breadcrumb & Header -->
+<!-- Header -->
 <div style="margin-bottom:20px;">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <a href="{% url 'dashboard' %}" style="font-size:12px;font-weight:700;color:#818cf8;text-decoration:none;">← Dashboard</a>
-        <span style="color:#334155;font-size:12px;">›</span>
-        <a href="{% url 'kertas_kerja' %}" style="font-size:12px;font-weight:700;color:#818cf8;text-decoration:none;">Manajemen Kertas Kerja</a>
-        <span style="color:#334155;font-size:12px;">›</span>
-        <span style="font-size:12px;font-weight:700;color:#94a3b8;">{{ periode.label }}</span>
-    </div>
     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;">
         <div>
             <h1 style="font-size:26px;font-weight:900;color:white;">Konfigurasi — {{ periode.label }}</h1>
@@ -257,11 +254,12 @@ async function triggerPull() {
     showLoader('Menarik data dari GSheet...');
     try {
         const d = await periodeApi({ action: 'pull' });
-        showToast('success', 'Berhasil', d.message);
-        setTimeout(() => location.reload(), 1200);
+        hideLoader();
+        await pikasAlert('Berhasil', d.message, 'success');
+        location.reload();
     } catch(e) { 
         hideLoader();
-        showToast('error', 'Gagal', e.message); 
+        await pikasAlert('Gagal', e.message, 'error'); 
     }
 }
 
@@ -277,10 +275,10 @@ async function triggerPush() {
     try {
         const d = await periodeApi({ action: 'push' });
         hideLoader();
-        showToast('success', 'Berhasil', d.message);
+        await pikasAlert('Berhasil', d.message, 'success');
     } catch(e) { 
         hideLoader();
-        showToast('error', 'Gagal', e.message); 
+        await pikasAlert('Gagal', e.message, 'error'); 
     }
 }
 

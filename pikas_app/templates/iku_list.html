@@ -1,16 +1,13 @@
 {% extends 'crm_base.html' %}
 {% block title %}Kertas Kerja IKU — PIKAS{% endblock %}
-{% block header_title %}Kertas Kerja IKU{% endblock %}
+{% block breadcrumbs %}
+<span class="breadcrumb-item">IKU Workspace</span>
+{% endblock %}
 
 {% block content %}
 <!-- Header Minimalis & Status Pills -->
 <div style="margin-bottom:24px; display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px;">
     <div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-            <a href="{% url 'dashboard' %}" style="font-size:12px;font-weight:700;color:#818cf8;text-decoration:none;">← Dashboard</a>
-            <span style="color:#334155;font-size:12px;">›</span>
-            <span style="font-size:12px;font-weight:700;color:#94a3b8;">Kertas Kerja</span>
-        </div>
         <h1 style="font-size:24px;font-weight:900;color:white;margin-bottom:8px;">Kertas Kerja IKU</h1>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
             <p style="font-size:13px;color:#94a3b8;">Isi dan lengkapi data realisasi serta bukti kinerja.</p>

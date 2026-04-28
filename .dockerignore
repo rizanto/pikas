@@ -1,0 +1,13 @@
+.git
+.env
+__pycache__
+*.pyc
+db.sqlite3
+staticfiles
+media
+.venv
+venv
+env
+service_account.json
+.vscode
+.idea

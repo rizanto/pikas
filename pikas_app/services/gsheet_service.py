@@ -6,7 +6,8 @@ from pikas_app.models import MasterIKU, FRAEntry
 from django.utils import timezone
 from django.db import transaction
 
-SERVICE_ACCOUNT_FILE = settings.BASE_DIR / 'service_account.json'
+import os
+SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", str(settings.BASE_DIR / 'service_account.json'))
 SCOPES = [
     'https://www.googleapis.com/auth/spreadsheets',
     'https://www.googleapis.com/auth/drive'
@@ -36,9 +37,23 @@ ENTRY_FIELD_MAP = {
 }
 
 
+import json
+
 def get_gspread_client():
-    creds = Credentials.from_service_account_file(
-        str(SERVICE_ACCOUNT_FILE), scopes=SCOPES)
+    # Cek apakah ada JSON langsung di env var (untuk kemudahan di VPS/Dokploy)
+    sa_json = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
+    if sa_json:
+        try:
+            info = json.loads(sa_json)
+            creds = Credentials.from_service_account_info(info, scopes=SCOPES)
+        except Exception as e:
+            raise ValueError(f"Error parsing GOOGLE_SERVICE_ACCOUNT_JSON: {str(e)}")
+    else:
+        # Fallback ke file fisik
+        if not os.path.exists(SERVICE_ACCOUNT_FILE):
+            raise FileNotFoundError(f"Service account file not found at {SERVICE_ACCOUNT_FILE} and GOOGLE_SERVICE_ACCOUNT_JSON env var is empty.")
+        creds = Credentials.from_service_account_file(str(SERVICE_ACCOUNT_FILE), scopes=SCOPES)
+    
     return gspread.authorize(creds)
 
 
@@ -172,6 +187,7 @@ def pull_periode_data(gsheet_id, periode, ignore_dirty=False, only_done=False):
     if entries_to_update:
         FRAEntry.objects.bulk_update(entries_to_update, [
             'realisasi', 'kendala', 'solusi', 'rtl', 'pic_rtl', 'batas_waktu_rtl',
+            'link_bukti_kinerja', 'link_bukti_tl_sebelumnya', 'link_solusi',
             'proksi_x_realisasi', 'proksi_y_realisasi', 'is_dirty', 'pulled_data', 'last_synced_at'
         ])
 
@@ -209,9 +225,6 @@ def push_periode_data(gsheet_id, periode):
             'rtl': entry.rtl,
             'pic_rtl': entry.pic_rtl,
             'batas_waktu_rtl': entry.batas_waktu_rtl,
-            'link_bukti_kinerja': entry.link_bukti_kinerja,
-            'link_bukti_tl_sebelumnya': entry.link_bukti_tl_sebelumnya,
-            'link_solusi': entry.link_solusi,
         }
 
         # Push realisasi for active TW ONLY IF NO PROXY

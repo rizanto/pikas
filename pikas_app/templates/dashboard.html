@@ -1,6 +1,8 @@
 {% extends 'crm_base.html' %}
 {% block title %}Dashboard — PIKAS{% endblock %}
-{% block header_title %}Dashboard Overview{% endblock %}
+{% block breadcrumbs %}
+<span class="breadcrumb-item">Dashboard</span>
+{% endblock %}
 
 {% block content %}
 {% if error %}
@@ -46,25 +48,25 @@
 
 <!-- Stat Cards Ultra-Compact -->
 <div style="display:grid;grid-template-columns:repeat(5, 1fr);gap:12px;margin-bottom:20px;">
-    <div class="glass-card" style="padding:12px 16px;">
-        <p style="font-size:10px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Total IKU</p>
-        <p style="font-size:24px;font-weight:900;color:white;">{{ total_iku }}</p>
+    <div class="glass-card" style="padding:16px; display:flex; flex-direction:column; justify-content:center;">
+        <p style="font-size:11px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Total IKU</p>
+        <p style="font-size:26px;font-weight:900;color:white;line-height:1;">{{ total_iku }}</p>
     </div>
-    <div class="glass-card" style="padding:12px 16px;">
-        <p style="font-size:10:px;font-weight:800;color:#22c55e;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Selesai</p>
-        <p style="font-size:24px;font-weight:900;color:#22c55e;">{{ done_iku }}</p>
+    <div class="glass-card" style="padding:16px; display:flex; flex-direction:column; justify-content:center;">
+        <p style="font-size:11px;font-weight:800;color:#22c55e;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Selesai</p>
+        <p style="font-size:26px;font-weight:900;color:#22c55e;line-height:1;">{{ done_iku }}</p>
     </div>
-    <div class="glass-card" style="padding:12px 16px;">
-        <p style="font-size:10px;font-weight:800;color:#f97316;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Pending</p>
-        <p style="font-size:24px;font-weight:900;color:#f97316;">{{ pending_iku }}</p>
+    <div class="glass-card" style="padding:16px; display:flex; flex-direction:column; justify-content:center;">
+        <p style="font-size:11px;font-weight:800;color:#f97316;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Pending</p>
+        <p style="font-size:26px;font-weight:900;color:#f97316;line-height:1;">{{ pending_iku }}</p>
     </div>
-    <div class="glass-card" style="padding:12px 16px;">
-        <p style="font-size:10px;font-weight:800;color:#a855f7;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Avg. Progres</p>
-        <p style="font-size:24px;font-weight:900;color:#a855f7;">{% if total_iku > 0 %}{% widthratio done_iku total_iku 100 %}{% else %}0{% endif %}<span style="font-size:14px; opacity:0.7;">%</span></p>
+    <div class="glass-card" style="padding:16px; display:flex; flex-direction:column; justify-content:center;">
+        <p style="font-size:11px;font-weight:800;color:#a855f7;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Avg. Progres</p>
+        <p style="font-size:26px;font-weight:900;color:#a855f7;line-height:1;">{% if total_iku > 0 %}{% widthratio done_iku total_iku 100 %}{% else %}0{% endif %}<span style="font-size:14px; opacity:0.7; margin-left:2px;">%</span></p>
     </div>
-    <div class="glass-card" style="padding:12px 16px;">
-        <p style="font-size:10px;font-weight:800;color:#60a5fa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Tim Terlibat</p>
-        <p style="font-size:24px;font-weight:900;color:#60a5fa;">{{ operator_progress|length }}</p>
+    <div class="glass-card" style="padding:16px; display:flex; flex-direction:column; justify-content:center;">
+        <p style="font-size:11px;font-weight:800;color:#60a5fa;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Tim Terlibat</p>
+        <p style="font-size:26px;font-weight:900;color:#60a5fa;line-height:1;">{{ operator_progress|length }}</p>
     </div>
 </div>
 

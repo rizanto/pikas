@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="{% static 'img/pikas-logo-xs.png' %}">
     <title>{% block title %}PIKAS{% endblock %}</title>
     <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap" rel="stylesheet">
     {% block extra_head %}{% endblock %}
@@ -76,10 +77,78 @@
                 0 8px 32px rgba(0,0,0,0.4), 
                 inset 0 0 0 1px rgba(255,255,255,0.05); 
         }
-        .pikas-input { width:100%; padding:10px 14px; background:rgba(15,20,40,0.6); border:1px solid rgba(71,85,105,0.3); border-radius:10px; color:#e2e8f0; font-size:13px; font-weight:600; font-family:'Nunito Sans',sans-serif; outline:none; transition:all 0.25s; }
-        .pikas-input::placeholder { color:#475569; }
-        .pikas-input:focus { border-color:rgba(168,85,247,0.5); box-shadow:0 0 0 3px rgba(168,85,247,0.08); background:rgba(15,20,40,0.8); }
-        .pikas-input:disabled { opacity:0.5; cursor:not-allowed; }
+        /* PREMIUM SOLID DARK INPUTS */
+        .pikas-input { 
+            width:100%; padding: 8px 14px; 
+            background: #0f172a;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 10px; 
+            color: #f1f5f9; 
+            font-size: 12.5px; 
+            font-weight: 600; 
+            font-family: 'Nunito Sans', sans-serif; 
+            outline: none; 
+            transition: all 0.2s ease;
+        }
+        .pikas-input:focus { 
+            border-color: #a855f7; 
+            background: #111827;
+        }
+
+        /* COMPACT CUSTOM DROPDOWN */
+        .pikas-custom-select { position: relative; width: 100%; user-select: none; }
+        .pikas-select-trigger {
+            display: flex; align-items: center; justify-content: flex-start;
+            cursor: pointer; min-height: 38px; padding-right: 32px !important;
+            position: relative; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .pikas-select-trigger::after {
+            content: ''; width: 6px; height: 6px;
+            border-right: 2px solid #64748b;
+            border-bottom: 2px solid #64748b;
+            transform: rotate(45deg);
+            position: absolute; right: 14px; top: 50%;
+            margin-top: -5px; transition: transform 0.3s ease;
+        }
+        .pikas-custom-select.active .pikas-select-trigger::after { transform: rotate(-135deg); margin-top: 2px; }
+        
+        .pikas-select-options {
+            position: absolute; top: calc(100% + 5px); left: 0; right: 0;
+            background: #1e293b;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 10px;
+            overflow: hidden; z-index: 9999;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            opacity: 0; visibility: hidden; transform: translateY(5px);
+            transition: all 0.2s ease;
+            pointer-events: none;
+        }
+        .pikas-custom-select.active .pikas-select-options { 
+            opacity: 1; visibility: visible; transform: translateY(0);
+            pointer-events: all;
+        }
+        
+        .pikas-option {
+            padding: 10px 14px; color: #94a3b8; font-size: 12px; font-weight: 600;
+            cursor: pointer; transition: all 0.15s; border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+        .pikas-option:hover { background: #334155; color: white; }
+        .pikas-option.selected { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
+
+        .pikas-btn-primary { 
+            padding: 9px 20px; 
+            background: linear-gradient(135deg, #7c3aed, #a855f7); 
+            border: none; border-radius: 10px; 
+            color: white; font-size: 12.5px; font-weight: 700; 
+            cursor: pointer; transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+        }
+        .pikas-btn-primary:hover { 
+            transform: translateY(-2px) scale(1.02); 
+            background-position: right center;
+            box-shadow: 0 8px 25px rgba(168, 85, 247, 0.5); 
+        }
+        .pikas-btn-primary:active { transform: translateY(0) scale(0.98); }
         .pikas-input:-webkit-autofill,
         .pikas-input:-webkit-autofill:hover,
         .pikas-input:-webkit-autofill:focus,
@@ -165,7 +234,11 @@
             flex-shrink:0; 
             box-shadow: inset 0 -1px 0 0 rgba(255,255,255,0.02);
         }
-        .navbar-title { font-size:17px; font-weight:800; color:var(--text-primary); }
+        .navbar-title { font-size: 15px; font-weight: 800; color: white; }
+        .breadcrumb-back { color: #a855f7; text-decoration: none; font-weight: 700; transition: opacity 0.2s; font-size: 12px; }
+        .breadcrumb-back:hover { opacity: 0.8; }
+        .breadcrumb-sep { color: #334155; font-weight: 400; font-size: 12px; }
+        .breadcrumb-item { color: #94a3b8; font-weight: 700; font-size: 12px; }
         .navbar-right { display:flex; align-items:center; gap:16px; }
         .period-badge { display:flex; align-items:center; gap:8px; padding:6px 14px; border-radius:20px; background:rgba(15,20,40,0.6); border:1px solid rgba(148,163,184,0.08); font-size:11px; font-weight:700; color:var(--text-secondary); }
         .period-dot { width:7px; height:7px; border-radius:50%; }
@@ -208,14 +281,14 @@
         <script>if(localStorage.getItem('pikas_sidebar')==='min') document.getElementById('sidebar').classList.add('minimized');</script>
         <div class="sidebar-inner">
             <div class="sidebar-header">
-                <div class="sidebar-logo" style="background:transparent; box-shadow:none;">
-                    <img src="{% static 'img/pikas-logo.png' %}" alt="Logo" style="width:100%; height:100%; object-fit:contain;">
+                <div class="sidebar-logo" style="background:transparent; box-shadow:none; width:40px; height:40px;">
+                    <img src="{% static 'img/pikas-logo-md.png' %}" alt="Logo" style="width:100%; height:100%; object-fit:contain;">
                 </div>
                 <span class="sidebar-brand">PIKAS</span>
             </div>
             <nav class="sidebar-nav">
                 <div class="sidebar-nav-label">Menu</div>
-                <a href="{% url 'dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <a href="{% url 'dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'dashboard_review' %}active{% endif %}">
                     <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
                     <span class="nav-text">Dashboard</span>
                 </a>
@@ -255,7 +328,10 @@
     <!-- Main -->
     <div class="main-wrapper">
         <header class="navbar">
-            <div class="navbar-title">{% block header_title %}Dashboard{% endblock %}</div>
+            <div class="navbar-title" style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 10px; font-weight: 800; color: #a855f7; background: rgba(168,85,247,0.1); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(168,85,247,0.2); text-transform: uppercase; letter-spacing: 1px;">Satuan Kerja</span>
+                <span style="font-size: 14px; font-weight: 700; color: #f1f5f9; letter-spacing: 0.5px;">{{ satker_name }}</span>
+            </div>
             <div class="navbar-right">
                 <div class="period-badge">
                     <div class="period-dot {% if active_periode and not active_periode.is_locked %}active{% else %}locked{% endif %}"></div>
@@ -271,6 +347,9 @@
             </div>
         </header>
         <main class="main-content">
+            <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                {% block breadcrumbs %}{% endblock %}
+            </div>
             {% block content %}{% endblock %}
         </main>
     </div>
@@ -279,6 +358,61 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <script>
+        // PREMIUM PIKAS CUSTOM SELECT SYSTEM
+        function initPikasSelects() {
+            document.querySelectorAll('select.pikas-input:not([data-pikas-init])').forEach(select => {
+                select.setAttribute('data-pikas-init', 'true');
+                select.style.display = 'none';
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'pikas-custom-select';
+                
+                const trigger = document.createElement('div');
+                trigger.className = 'pikas-input pikas-select-trigger';
+                trigger.textContent = select.options[select.selectedIndex]?.text || '-- Pilih --';
+                
+                const optionsList = document.createElement('div');
+                optionsList.className = 'pikas-select-options';
+                
+                Array.from(select.options).forEach((opt, idx) => {
+                    const optionDiv = document.createElement('div');
+                    optionDiv.className = 'pikas-option' + (opt.selected ? ' selected' : '');
+                    optionDiv.textContent = opt.text;
+                    optionDiv.onclick = (e) => {
+                        e.stopPropagation();
+                        select.value = opt.value;
+                        trigger.textContent = opt.text;
+                        wrapper.classList.remove('active');
+                        
+                        optionsList.querySelectorAll('.pikas-option').forEach(o => o.classList.remove('selected'));
+                        optionDiv.classList.add('selected');
+                        
+                        select.dispatchEvent(new Event('change'));
+                    };
+                    optionsList.appendChild(optionDiv);
+                });
+                
+                wrapper.onclick = (e) => {
+                    e.stopPropagation();
+                    const isActive = wrapper.classList.contains('active');
+                    document.querySelectorAll('.pikas-custom-select').forEach(s => s.classList.remove('active'));
+                    if (!isActive) wrapper.classList.add('active');
+                };
+                
+                wrapper.appendChild(trigger);
+                wrapper.appendChild(optionsList);
+                select.parentNode.insertBefore(wrapper, select);
+            });
+        }
+
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.pikas-custom-select').forEach(s => s.classList.remove('active'));
+        });
+
+        document.addEventListener('DOMContentLoaded', initPikasSelects);
+        const selectObserver = new MutationObserver(() => initPikasSelects());
+        selectObserver.observe(document.body, { childList: true, subtree: true });
+
         function toggleSidebar(){
             var s = document.getElementById('sidebar');
             var isMin = s.classList.toggle('minimized');
@@ -301,6 +435,20 @@
 
         function showLoader(text){document.getElementById('globalLoaderText').textContent=text||'Memproses...';document.getElementById('globalLoader').style.display='flex';}
         function hideLoader(){document.getElementById('globalLoader').style.display='none';}
+
+        window.pikasAlert=function(title,message,type){
+            type=type||'success';
+            var colors={success:'linear-gradient(135deg,#22c55e,#10b981)',error:'linear-gradient(135deg,#ef4444,#dc2626)',info:'linear-gradient(135deg,#3b82f6,#2563eb)'};
+            var icons={success:'<svg width="24" height="24" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',error:'<svg width="24" height="24" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',info:'<svg width="24" height="24" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'};
+            return new Promise(function(resolve){
+                var o=document.createElement('div');o.style.cssText='position:fixed;inset:0;z-index:10001;background:rgba(5,8,22,0.85);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;animation:fadeIn 0.2s ease-out;';
+                o.innerHTML='<div style="width:90%;max-width:400px;background:rgba(15,20,40,0.98);border:1px solid rgba(148,163,184,0.15);border-radius:24px;padding:32px;text-align:center;box-shadow:0 32px 80px -12px rgba(0,0,0,0.7);"><div style="width:60px;height:60px;border-radius:20px;background:'+colors[type]+';display:flex;align-items:center;justify-content:center;margin:0 auto 20px;box-shadow:0 12px 24px -8px rgba(0,0,0,0.4);">'+icons[type]+'</div><h3 style="font-size:20px;font-weight:900;color:white;margin-bottom:12px;">'+title+'</h3><p style="font-size:14px;color:#94a3b8;line-height:1.6;margin-bottom:28px;font-weight:600;">'+message+'</p><button id="_pa_ok" style="width:100%;padding:14px;background:'+colors[type]+';border:none;border-radius:14px;color:white;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;box-shadow:0 8px 20px -6px rgba(0,0,0,0.3);transition:transform 0.2s;">OK</button></div>';
+                document.body.appendChild(o);
+                o.querySelector('#_pa_ok').onclick=function(){o.style.opacity='0';o.style.transition='opacity 0.2s';setTimeout(()=>{o.remove();resolve();},200);};
+                o.querySelector('#_pa_ok').onmouseover=function(){this.style.transform='translateY(-2px)';};
+                o.querySelector('#_pa_ok').onmouseout=function(){this.style.transform='none';};
+            });
+        };
 
         window.pikasConfirm=function(title,message,confirmText,confirmColor){
             confirmText=confirmText||'Konfirmasi';confirmColor=confirmColor||'linear-gradient(135deg,#7c3aed,#a855f7)';

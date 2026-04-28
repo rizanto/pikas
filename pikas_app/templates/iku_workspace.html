@@ -1,16 +1,13 @@
 {% extends 'crm_base.html' %}
 {% block title %}Workspace IKU — PIKAS{% endblock %}
-{% block header_title %}Workspace IKU{% endblock %}
+{% block breadcrumbs %}
+<a href="{% url 'iku_list' %}" class="breadcrumb-back">← IKU Workspace</a>
+<span class="breadcrumb-sep">›</span>
+<span class="breadcrumb-item">Workspace {{ periode.label }}</span>
+{% endblock %}
 
 {% block content %}
 <div style="margin-bottom:16px;">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <a href="{% url 'dashboard' %}" style="font-size:12px;font-weight:700;color:#818cf8;text-decoration:none;">← Dashboard</a>
-        <span style="color:#334155;font-size:12px;">›</span>
-        <a href="{% url 'iku_list' %}" style="font-size:12px;font-weight:700;color:#818cf8;text-decoration:none;">Kertas Kerja</a>
-        <span style="color:#334155;font-size:12px;">›</span>
-        <span style="font-size:12px;font-weight:700;color:#94a3b8;">Workspace</span>
-    </div>
     
     <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;">
         <div>
@@ -53,8 +50,31 @@
     .input-field:focus { outline:none; border-color:#a855f7; box-shadow:0 0 0 3px rgba(168,85,247,0.15); background:rgba(15,20,40,0.8); }
     .input-field:disabled { opacity:0.6; cursor:not-allowed; }
     
-    .upload-btn { display:inline-flex; align-items:center; gap:8px; padding:8px 14px; background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.2); border-radius:8px; color:#60a5fa; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; text-decoration:none; transition:all 0.2s; }
-    .upload-btn:hover { background:rgba(59,130,246,0.2); transform:translateY(-1px); }
+    .viewer-btn { 
+        padding:10px 18px; 
+        background:rgba(var(--btn-c),0.08); 
+        border:1px solid rgba(var(--btn-c),0.2); 
+        border-radius:10px; 
+        color:rgb(var(--btn-c)); 
+        font-size:11px; 
+        font-weight:900; 
+        text-transform:uppercase;
+        letter-spacing:0.5px;
+        cursor:pointer; 
+        display:flex; 
+        align-items:center; 
+        gap:8px; 
+        font-family:inherit; 
+        transition:all 0.25s; 
+    }
+    .viewer-btn:hover { 
+        background:rgba(var(--btn-c),0.15); 
+        border-color:rgba(var(--btn-c),0.4);
+        transform:translateY(-2px);
+        box-shadow:0 8px 20px -6px rgba(var(--btn-c),0.3);
+    }
+    .viewer-btn svg { transition: transform 0.25s; }
+    .viewer-btn:hover svg { transform: scale(1.1); }
     
     .save-btn { width:100%; padding:14px; background:linear-gradient(135deg, #7c3aed, #a855f7); border:none; border-radius:10px; color:white; font-size:14px; font-weight:800; cursor:pointer; transition:all 0.2s; display:flex; justify-content:center; align-items:center; gap:8px; box-shadow:0 4px 16px -4px rgba(168,85,247,0.5); }
     .save-btn:hover { transform:translateY(-2px); box-shadow:0 8px 24px -6px rgba(168,85,247,0.6); }
@@ -102,9 +122,8 @@
             </div>
 
             {% for entry in entries %}
-            <div class="iku-detail" id="detail-{{ entry.id }}" style="display:none; animation: fadeIn 0.2s ease-out;">
-                <form id="form-{{ entry.id }}" onsubmit="saveEntry(event, '{{ entry.iku.id }}', '{{ entry.id }}', {{ entry.iku.has_proxy|yesno:'true,false' }})" style="display:flex; flex-direction:column; gap:16px;">
-                    
+            <div class="iku-detail" id="detail-{{ entry.id }}" style="display:none; animation: fadeIn 0.2s ease-out; display:flex; flex-direction:column; gap:16px;">
+                <form id="form-{{ entry.id }}" onsubmit="saveEntry(event, '{{ entry.iku.id }}', '{{ entry.id }}', {{ entry.iku.has_proxy|yesno:'true,false' }})" style="display:contents;">
                     <!-- Identitas -->
                     <div class="bento-card" style="border-left:3px solid #a855f7;">
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
@@ -114,131 +133,262 @@
                             </div>
                             <div style="display:flex;gap:6px;">
                                 <span style="font-size:10px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(168,85,247,0.1);color:#c084fc;">{{ entry.iku.jenis_iku }}</span>
+                                <span style="font-size:10px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(59,130,246,0.1);color:#93c5fd;">{{ entry.iku.jenis_periode }}</span>
+                                <span style="font-size:10px;font-weight:800;padding:4px 10px;border-radius:6px;background:rgba(236,72,153,0.1);color:#f472b6;">{% if entry.iku.jenis_persen %}Persentase{% else %}Nominal{% endif %}</span>
                             </div>
                         </div>
                         <h2 style="font-size:18px;font-weight:800;color:white;line-height:1.4;margin-bottom:12px;">{{ entry.iku.indikator }}</h2>
-                        <div style="display:flex; justify-content:space-between; padding-top:12px; border-top:1px solid rgba(148,163,184,0.1);">
-                            <div><p class="bento-title">Target Tahunan</p><p class="bento-val">{{ entry.iku.target|default:"—" }} {{ entry.iku.satuan }}</p></div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; border-top:1px solid rgba(148,163,184,0.1); padding-top:12px;">
+                            <div>
+                                <p class="bento-title">Tujuan</p>
+                                <p class="bento-val"><span style="color:#818cf8;">[{{ entry.pulled_data.kode_tujuan }}]</span> {{ entry.pulled_data.tujuan|default:"—" }}</p>
+                            </div>
+                            <div>
+                                <p class="bento-title">Sasaran</p>
+                                <p class="bento-val"><span style="color:#c084fc;">[{{ entry.pulled_data.kode_sasaran }}]</span> {{ entry.pulled_data.sasaran|default:"—" }}</p>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Input Realisasi -->
-                    <div class="bento-card">
-                        <p class="bento-title">Isian Realisasi (TW {{ periode.triwulan }})</p>
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:12px;">
-                            <div>
-                                <label style="font-size:11px; font-weight:700; color:#cbd5e1; display:block; margin-bottom:6px;">
-                                    Realisasi TW {{ periode.triwulan }}
+                    <!-- Capaian & Target Utama -->
+                    <div style="display:grid; grid-template-columns:1fr 2fr; gap:16px;">
+                        <div class="bento-card" style="display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;">
+                            <p class="bento-title">Target Tahunan</p>
+                            <p style="font-size:32px;font-weight:900;color:#22c55e;">{{ entry.iku.target|default:"—" }}</p>
+                            <p style="font-size:12px;font-weight:700;color:#94a3b8;margin-top:4px;">{{ entry.iku.satuan }}</p>
+                        </div>
+                        
+                        <div class="bento-card">
+                            <p class="bento-title">Target & Realisasi (TW 1-4)</p>
+                            <div class="bento-grid">
+                                <div class="tw-col"><span class="tw-label">TW 1</span><div class="tw-box" title="Target">T: {{ entry.pulled_data.alokasi_target_tw1|default:"-" }}</div>
+                                    {% if periode.triwulan == 1 %}
                                     {% if entry.iku.has_proxy %}
-                                    <span style="background:rgba(252,211,77,0.1); color:#fcd34d; border:1px solid rgba(252,211,77,0.2); padding:2px 6px; border-radius:4px; font-size:9px; margin-left:8px; font-weight:900; letter-spacing:0.5px;">FORMULA AUTO</span>
+                                    <input type="text" class="tw-box highlight" style="width:100%; box-sizing:border-box; outline:none; border:1px dashed #fcd34d; background:rgba(252,211,77,0.05); color:#fcd34d; font-family:inherit; text-align:center; cursor:not-allowed;" value="Formula Auto" readonly title="Realisasi proksi dihitung otomatis oleh sistem">
+                                    {% else %}
+                                    <input type="text" name="realisasi" class="tw-box highlight" style="width:100%; box-sizing:border-box; outline:none; border:1px solid #a855f7; color:white; font-family:inherit; text-align:center;" value="{{ entry.realisasi }}" {% if periode.is_locked %}readonly style="opacity:0.6; cursor:not-allowed;"{% endif %} placeholder="Isi R TW 1...">
                                     {% endif %}
+                                    {% else %}
+                                    <div class="tw-box highlight" title="Realisasi">R: {{ entry.pulled_data.realisasi_tw1|default:"-" }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="tw-col"><span class="tw-label">TW 2</span><div class="tw-box" title="Target">T: {{ entry.pulled_data.alokasi_target_tw2|default:"-" }}</div>
+                                    {% if periode.triwulan == 2 %}
+                                    {% if entry.iku.has_proxy %}
+                                    <input type="text" class="tw-box highlight" style="width:100%; box-sizing:border-box; outline:none; border:1px dashed #fcd34d; background:rgba(252,211,77,0.05); color:#fcd34d; font-family:inherit; text-align:center; cursor:not-allowed;" value="Formula Auto" readonly title="Realisasi proksi dihitung otomatis oleh sistem">
+                                    {% else %}
+                                    <input type="text" name="realisasi" class="tw-box highlight" style="width:100%; box-sizing:border-box; outline:none; border:1px solid #a855f7; color:white; font-family:inherit; text-align:center;" value="{{ entry.realisasi }}" {% if periode.is_locked %}readonly style="opacity:0.6; cursor:not-allowed;"{% endif %} placeholder="Isi R TW 2...">
+                                    {% endif %}
+                                    {% else %}
+                                    <div class="tw-box highlight" title="Realisasi">R: {{ entry.pulled_data.realisasi_tw2|default:"-" }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="tw-col"><span class="tw-label">TW 3</span><div class="tw-box" title="Target">T: {{ entry.pulled_data.alokasi_target_tw3|default:"-" }}</div>
+                                    {% if periode.triwulan == 3 %}
+                                    {% if entry.iku.has_proxy %}
+                                    <input type="text" class="tw-box highlight" style="width:100%; box-sizing:border-box; outline:none; border:1px dashed #fcd34d; background:rgba(252,211,77,0.05); color:#fcd34d; font-family:inherit; text-align:center; cursor:not-allowed;" value="Formula Auto" readonly title="Realisasi proksi dihitung otomatis oleh sistem">
+                                    {% else %}
+                                    <input type="text" name="realisasi" class="tw-box highlight" style="width:100%; box-sizing:border-box; outline:none; border:1px solid #a855f7; color:white; font-family:inherit; text-align:center;" value="{{ entry.realisasi }}" {% if periode.is_locked %}readonly style="opacity:0.6; cursor:not-allowed;"{% endif %} placeholder="Isi R TW 3...">
+                                    {% endif %}
+                                    {% else %}
+                                    <div class="tw-box highlight" title="Realisasi">R: {{ entry.pulled_data.realisasi_tw3|default:"-" }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="tw-col"><span class="tw-label">TW 4</span><div class="tw-box" title="Target">T: {{ entry.pulled_data.alokasi_target_tw4|default:"-" }}</div>
+                                    {% if periode.triwulan == 4 %}
+                                    {% if entry.iku.has_proxy %}
+                                    <input type="text" class="tw-box highlight" style="width:100%; box-sizing:border-box; outline:none; border:1px dashed #fcd34d; background:rgba(252,211,77,0.05); color:#fcd34d; font-family:inherit; text-align:center; cursor:not-allowed;" value="Formula Auto" readonly title="Realisasi proksi dihitung otomatis oleh sistem">
+                                    {% else %}
+                                    <input type="text" name="realisasi" class="tw-box highlight" style="width:100%; box-sizing:border-box; outline:none; border:1px solid #a855f7; color:white; font-family:inherit; text-align:center;" value="{{ entry.realisasi }}" {% if periode.is_locked %}readonly style="opacity:0.6; cursor:not-allowed;"{% endif %} placeholder="Isi R TW 4...">
+                                    {% endif %}
+                                    {% else %}
+                                    <div class="tw-box highlight" title="Realisasi">R: {{ entry.pulled_data.realisasi_tw4|default:"-" }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Evaluasi Capaian & PKO -->
+                    <div class="bento-card">
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                            <div>
+                                <p class="bento-title">Persentase Capaian (Terhadap Target TW)</p>
+                                <div class="bento-grid" style="grid-template-columns:repeat(4,1fr);">
+                                    <div class="tw-box">Q1: {{ entry.pulled_data.capaian_tw_tw1|default:"-" }}</div>
+                                    <div class="tw-box">Q2: {{ entry.pulled_data.capaian_tw_tw2|default:"-" }}</div>
+                                    <div class="tw-box">Q3: {{ entry.pulled_data.capaian_tw_tw3|default:"-" }}</div>
+                                    <div class="tw-box">Q4: {{ entry.pulled_data.capaian_tw_tw4|default:"-" }}</div>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="bento-title">Persentase Capaian (Terhadap Target Tahunan)</p>
+                                <div class="bento-grid" style="grid-template-columns:repeat(4,1fr);">
+                                    <div class="tw-box highlight">Q1: {{ entry.pulled_data.capaian_tahunan_tw1|default:"-" }}</div>
+                                    <div class="tw-box highlight">Q2: {{ entry.pulled_data.capaian_tahunan_tw2|default:"-" }}</div>
+                                    <div class="tw-box highlight">Q3: {{ entry.pulled_data.capaian_tahunan_tw3|default:"-" }}</div>
+                                    <div class="tw-box highlight">Q4: {{ entry.pulled_data.capaian_tahunan_tw4|default:"-" }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:16px; padding-top:16px; border-top:1px dashed rgba(148,163,184,0.1);">
+                            <div>
+                                <p class="bento-title">PKO Normalisasi</p>
+                                <p class="bento-val" style="color:#fdba74;">{{ entry.pulled_data.pko_normalisasi|default:"—" }}</p>
+                            </div>
+                            <div>
+                                <p class="bento-title">PKO Koreksi AKIP</p>
+                                <p class="bento-val" style="color:#f472b6;">{{ entry.pulled_data.pko_koreksi_akip|default:"—" }}</p>
+                            </div>
+                            <div>
+                                <p class="bento-title">PKO Nilai Akhir</p>
+                                <p class="bento-val" style="color:#a855f7; font-size:16px; font-weight:900;">{{ entry.pulled_data.pko_nilai_akhir|default:"—" }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Proksi (jika ada) -->
+                    {% if entry.iku.has_proxy %}
+                    <div class="bento-card" style="border:1px solid rgba(249,115,22,0.2);">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                            <span style="font-size:10px;font-weight:800;padding:4px 8px;border-radius:6px;background:rgba(249,115,22,0.1);color:#fdba74;">KOMPONEN PROKSI</span>
+                        </div>
+                        <div style="background:rgba(8,12,30,0.4); padding:12px; border-radius:8px;">
+                                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                                    <div><p class="bento-title" style="color:#fcd34d; margin:0;">{{ entry.iku.proxy_x_label|default:"-" }}</p></div>
+                                    <div><p class="bento-title" style="color:#6ee7b7; margin:0;">{{ entry.iku.proxy_y_label|default:"-" }}</p></div>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid rgba(148,163,184,0.05);">
+                                    <span style="font-size:11px;color:#94a3b8;">Target Tahunan X/Y:</span>
+                                    <span style="font-size:12px;font-weight:800;color:white;">{{ entry.pulled_data.proksi_x_target_tahunan|default:"-" }} / {{ entry.pulled_data.proksi_y_target_tahunan|default:"-" }}</span>
+                                </div>
+                                <div class="bento-grid" style="grid-template-columns:repeat(4,1fr); gap:6px;">
+                                    <div class="tw-col"><span class="tw-label">TW 1</span><div class="tw-box" style="padding:4px;" title="X/Y Target">T: {{ entry.pulled_data.proksi_x_target_tw1|default:"-" }}/{{ entry.pulled_data.proksi_y_target_tw1|default:"-" }}</div>
+                                        {% if periode.triwulan == 1 %}
+                                        <div style="display:flex; flex-direction:column; gap:4px;">
+                                            <div style="display:flex; align-items:center; background:rgba(252,211,77,0.1); border:1px solid rgba(252,211,77,0.4); border-radius:4px; overflow:hidden;">
+                                                <span style="font-size:10px; font-weight:900; color:#1e293b; background:#fcd34d; padding:4px 6px;">X</span>
+                                                <input type="text" name="proksi_x_realisasi" style="flex:1; width:100%; min-width:0; background:transparent; border:none; outline:none; color:white; font-family:inherit; font-size:11px; padding:4px; text-align:center;" value="{{ entry.proksi_x_realisasi }}" {% if periode.is_locked %}disabled{% endif %} placeholder="Isi X...">
+                                            </div>
+                                            <div style="display:flex; align-items:center; background:rgba(110,231,183,0.1); border:1px solid rgba(110,231,183,0.4); border-radius:4px; overflow:hidden;">
+                                                <span style="font-size:10px; font-weight:900; color:#1e293b; background:#6ee7b7; padding:4px 6px;">Y</span>
+                                                <input type="text" name="proksi_y_realisasi" style="flex:1; width:100%; min-width:0; background:transparent; border:none; outline:none; color:white; font-family:inherit; font-size:11px; padding:4px; text-align:center;" value="{{ entry.proksi_y_realisasi }}" {% if periode.is_locked %}disabled{% endif %} placeholder="Isi Y...">
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <div class="tw-box highlight" style="padding:4px;" title="X/Y Realisasi">R: {{ entry.pulled_data.proksi_x_realisasi_tw1|default:"-" }}/{{ entry.pulled_data.proksi_y_realisasi_tw1|default:"-" }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="tw-col"><span class="tw-label">TW 2</span><div class="tw-box" style="padding:4px;">T: {{ entry.pulled_data.proksi_x_target_tw2|default:"-" }}/{{ entry.pulled_data.proksi_y_target_tw2|default:"-" }}</div>
+                                        {% if periode.triwulan == 2 %}
+                                        <div style="display:flex; flex-direction:column; gap:4px;">
+                                            <div style="display:flex; align-items:center; background:rgba(252,211,77,0.1); border:1px solid rgba(252,211,77,0.4); border-radius:4px; overflow:hidden;">
+                                                <span style="font-size:10px; font-weight:900; color:#1e293b; background:#fcd34d; padding:4px 6px;">X</span>
+                                                <input type="text" name="proksi_x_realisasi" style="flex:1; width:100%; min-width:0; background:transparent; border:none; outline:none; color:white; font-family:inherit; font-size:11px; padding:4px; text-align:center;" value="{{ entry.proksi_x_realisasi }}" {% if periode.is_locked %}disabled{% endif %} placeholder="Isi X...">
+                                            </div>
+                                            <div style="display:flex; align-items:center; background:rgba(110,231,183,0.1); border:1px solid rgba(110,231,183,0.4); border-radius:4px; overflow:hidden;">
+                                                <span style="font-size:10px; font-weight:900; color:#1e293b; background:#6ee7b7; padding:4px 6px;">Y</span>
+                                                <input type="text" name="proksi_y_realisasi" style="flex:1; width:100%; min-width:0; background:transparent; border:none; outline:none; color:white; font-family:inherit; font-size:11px; padding:4px; text-align:center;" value="{{ entry.proksi_y_realisasi }}" {% if periode.is_locked %}disabled{% endif %} placeholder="Isi Y...">
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <div class="tw-box highlight" style="padding:4px;">R: {{ entry.pulled_data.proksi_x_realisasi_tw2|default:"-" }}/{{ entry.pulled_data.proksi_y_realisasi_tw2|default:"-" }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="tw-col"><span class="tw-label">TW 3</span><div class="tw-box" style="padding:4px;">T: {{ entry.pulled_data.proksi_x_target_tw3|default:"-" }}/{{ entry.pulled_data.proksi_y_target_tw3|default:"-" }}</div>
+                                        {% if periode.triwulan == 3 %}
+                                        <div style="display:flex; flex-direction:column; gap:4px;">
+                                            <div style="display:flex; align-items:center; background:rgba(252,211,77,0.1); border:1px solid rgba(252,211,77,0.4); border-radius:4px; overflow:hidden;">
+                                                <span style="font-size:10px; font-weight:900; color:#1e293b; background:#fcd34d; padding:4px 6px;">X</span>
+                                                <input type="text" name="proksi_x_realisasi" style="flex:1; width:100%; min-width:0; background:transparent; border:none; outline:none; color:white; font-family:inherit; font-size:11px; padding:4px; text-align:center;" value="{{ entry.proksi_x_realisasi }}" {% if periode.is_locked %}disabled{% endif %} placeholder="Isi X...">
+                                            </div>
+                                            <div style="display:flex; align-items:center; background:rgba(110,231,183,0.1); border:1px solid rgba(110,231,183,0.4); border-radius:4px; overflow:hidden;">
+                                                <span style="font-size:10px; font-weight:900; color:#1e293b; background:#6ee7b7; padding:4px 6px;">Y</span>
+                                                <input type="text" name="proksi_y_realisasi" style="flex:1; width:100%; min-width:0; background:transparent; border:none; outline:none; color:white; font-family:inherit; font-size:11px; padding:4px; text-align:center;" value="{{ entry.proksi_y_realisasi }}" {% if periode.is_locked %}disabled{% endif %} placeholder="Isi Y...">
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <div class="tw-box highlight" style="padding:4px;">R: {{ entry.pulled_data.proksi_x_realisasi_tw3|default:"-" }}/{{ entry.pulled_data.proksi_y_realisasi_tw3|default:"-" }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="tw-col"><span class="tw-label">TW 4</span><div class="tw-box" style="padding:4px;">T: {{ entry.pulled_data.proksi_x_target_tw4|default:"-" }}/{{ entry.pulled_data.proksi_y_target_tw4|default:"-" }}</div>
+                                        {% if periode.triwulan == 4 %}
+                                        <div style="display:flex; flex-direction:column; gap:4px;">
+                                            <div style="display:flex; align-items:center; background:rgba(252,211,77,0.1); border:1px solid rgba(252,211,77,0.4); border-radius:4px; overflow:hidden;">
+                                                <span style="font-size:10px; font-weight:900; color:#1e293b; background:#fcd34d; padding:4px 6px;">X</span>
+                                                <input type="text" name="proksi_x_realisasi" style="flex:1; width:100%; min-width:0; background:transparent; border:none; outline:none; color:white; font-family:inherit; font-size:11px; padding:4px; text-align:center;" value="{{ entry.proksi_x_realisasi }}" {% if periode.is_locked %}disabled{% endif %} placeholder="Isi X...">
+                                            </div>
+                                            <div style="display:flex; align-items:center; background:rgba(110,231,183,0.1); border:1px solid rgba(110,231,183,0.4); border-radius:4px; overflow:hidden;">
+                                                <span style="font-size:10px; font-weight:900; color:#1e293b; background:#6ee7b7; padding:4px 6px;">Y</span>
+                                                <input type="text" name="proksi_y_realisasi" style="flex:1; width:100%; min-width:0; background:transparent; border:none; outline:none; color:white; font-family:inherit; font-size:11px; padding:4px; text-align:center;" value="{{ entry.proksi_y_realisasi }}" {% if periode.is_locked %}disabled{% endif %} placeholder="Isi Y...">
+                                            </div>
+                                        </div>
+                                        {% else %}
+                                        <div class="tw-box highlight" style="padding:4px;">R: {{ entry.pulled_data.proksi_x_realisasi_tw4|default:"-" }}/{{ entry.pulled_data.proksi_y_realisasi_tw4|default:"-" }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <!-- Isian Kualitatif & Eviden -->
+                    <div class="bento-card">
+                        <p class="bento-title">Evaluasi Kualitatif & Eviden</p>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+                            <div style="background:rgba(8,12,30,0.4); padding:12px; border-radius:8px; display:flex; flex-direction:column;">
+                                <p style="font-size:11px;font-weight:800;color:#fca5a5;margin-bottom:6px;">Kendala</p>
+                                <textarea name="kendala" style="flex:1; width:100%; background:transparent; border:none; outline:none; font-size:12px; color:#cbd5e1; font-family:inherit; min-height:80px;" rows="4" {% if periode.is_locked %}disabled{% endif %} placeholder="Deskripsikan kendala...">{{ entry.kendala }}</textarea>
+                            </div>
+                            <div style="background:rgba(8,12,30,0.4); padding:12px; border-radius:8px; display:flex; flex-direction:column;">
+                                <p style="font-size:11px;font-weight:800;color:#6ee7b7;margin-bottom:6px;">Solusi</p>
+                                <textarea name="solusi" style="flex:1; width:100%; background:transparent; border:none; outline:none; font-size:12px; color:#cbd5e1; font-family:inherit; min-height:80px;" rows="4" {% if periode.is_locked %}disabled{% endif %} placeholder="Deskripsikan solusi...">{{ entry.solusi }}</textarea>
+                            </div>
+                        </div>
+                        <div style="background:rgba(8,12,30,0.4); padding:12px; border-radius:8px; margin-bottom:16px; display:flex; flex-direction:column;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:6px; align-items:center; flex-wrap:wrap; gap:8px;">
+                                <p style="font-size:11px;font-weight:800;color:#93c5fd;">Rencana Tindak Lanjut (RTL)</p>
+                                <span style="font-size:10px;color:#94a3b8; display:flex; align-items:center; gap:8px;">
+                                    Batas Waktu: <input type="text" name="batas_waktu_rtl" value="{{ entry.batas_waktu_rtl }}" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:4px; color:white; font-size:11px; padding:4px 8px; width:160px; outline:none;" {% if periode.is_locked %}disabled{% endif %} placeholder="Contoh: 31 Des 2026"> 
+                                    | PIC RTL: <input type="text" name="pic_rtl" value="{{ entry.pic_rtl }}" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:4px; color:white; font-size:11px; padding:4px 8px; width:160px; outline:none;" {% if periode.is_locked %}disabled{% endif %} placeholder="Nama penanggung jawab...">
+                                </span>
+                            </div>
+                            <textarea name="rtl" style="flex:1; width:100%; background:transparent; border:none; outline:none; font-size:12px; color:#cbd5e1; font-family:inherit; min-height:60px;" rows="3" {% if periode.is_locked %}disabled{% endif %} placeholder="Deskripsikan RTL...">{{ entry.rtl }}</textarea>
+                        </div>
+
+                        <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:8px;">
+                            <!-- Bukti Kinerja -->
+                            <div style="display:flex; align-items:center; gap:6px; padding-right:12px; border-right:1px solid rgba(148,163,184,0.1);">
+                                <label class="checkbox-wrapper" style="margin-right:2px;" title="Tandai Sudah Selesai Upload">
+                                    <input type="checkbox" name="is_bukti_kinerja_done" class="checkbox-input" {% if entry.is_bukti_kinerja_done %}checked{% endif %} {% if periode.is_locked %}disabled{% endif %}>
                                 </label>
-                                <input type="text" name="realisasi" class="input-field" value="{{ entry.realisasi }}" 
-                                    {% if periode.is_locked or entry.iku.has_proxy %}
-                                    readonly style="background:rgba(15,20,40,0.6); border:1px dashed rgba(148,163,184,0.2); color:#64748b; cursor:not-allowed; box-shadow:none;"
-                                    {% endif %} 
-                                    placeholder="{% if entry.iku.has_proxy %}Nilai akan dikalkulasi otomatis oleh GSheet...{% else %}Masukkan angka...{% endif %}">
+                                <button type="button" onclick="{% if not entry.link_bukti_kinerja %}pikasAlert('Akses Dibatasi', 'Folder Google Drive belum disiapkan oleh Admin.', 'info'); return false;{% else %}openGDriveViewer('{{ entry.link_bukti_kinerja|escapejs }}','Bukti Kinerja'){% endif %}" class="viewer-btn" style="--btn-c:59,130,246;">
+                                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    BUKTI KINERJA
+                                </button>
                             </div>
-                            <div>
-                                <p style="font-size:11px; font-weight:700; color:#94a3b8; margin-bottom:6px;">Capaian & Histori Sebelumnya</p>
-                                <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                                    <div class="tw-box" title="TW 1">TW 1: {{ entry.pulled_data.realisasi_tw1|default:"-" }}</div>
-                                    <div class="tw-box" title="TW 2">TW 2: {{ entry.pulled_data.realisasi_tw2|default:"-" }}</div>
-                                    <div class="tw-box" title="TW 3">TW 3: {{ entry.pulled_data.realisasi_tw3|default:"-" }}</div>
-                                    <div class="tw-box" title="TW 4">TW 4: {{ entry.pulled_data.realisasi_tw4|default:"-" }}</div>
-                                </div>
+                            
+                            <!-- Bukti Solusi -->
+                            <div style="display:flex; align-items:center; gap:6px; padding-right:12px; border-right:1px solid rgba(148,163,184,0.1);">
+                                <label class="checkbox-wrapper" style="margin-right:2px;" title="Tandai Sudah Selesai Upload">
+                                    <input type="checkbox" name="is_bukti_solusi_done" class="checkbox-input" {% if entry.is_bukti_solusi_done %}checked{% endif %} {% if periode.is_locked %}disabled{% endif %}>
+                                </label>
+                                <button type="button" onclick="{% if not entry.link_solusi %}pikasAlert('Akses Dibatasi', 'Folder Google Drive belum disiapkan oleh Admin.', 'info'); return false;{% else %}openGDriveViewer('{{ entry.link_solusi|escapejs }}','Eviden Solusi'){% endif %}" class="viewer-btn" style="--btn-c:34,197,94;">
+                                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    BUKTI SOLUSI
+                                </button>
                             </div>
-                        </div>
-                        
-                        {% if entry.iku.has_proxy %}
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px; padding-top:16px; border-top:1px solid rgba(148,163,184,0.1);">
-                            <div>
-                                <label style="font-size:11px; font-weight:700; color:#fcd34d; display:block; margin-bottom:6px;">Proksi X: {{ entry.iku.proxy_x_label }}</label>
-                                <input type="text" name="proksi_x_realisasi" class="input-field" value="{{ entry.proksi_x_realisasi }}" {% if periode.is_locked %}disabled{% endif %} placeholder="Masukkan proksi X...">
-                            </div>
-                            <div>
-                                <label style="font-size:11px; font-weight:700; color:#6ee7b7; display:block; margin-bottom:6px;">Proksi Y: {{ entry.iku.proxy_y_label }}</label>
-                                <input type="text" name="proksi_y_realisasi" class="input-field" value="{{ entry.proksi_y_realisasi }}" {% if periode.is_locked %}disabled{% endif %} placeholder="Masukkan proksi Y...">
-                            </div>
-                        </div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Input Kualitatif -->
-                    <div class="bento-card">
-                        <p class="bento-title">Evaluasi Kualitatif</p>
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:12px;">
-                            <div>
-                                <label style="font-size:11px; font-weight:700; color:#fca5a5; display:block; margin-bottom:6px;">Kendala</label>
-                                <textarea name="kendala" class="input-field" rows="3" {% if periode.is_locked %}disabled{% endif %} placeholder="Deskripsikan kendala...">{{ entry.kendala }}</textarea>
-                            </div>
-                            <div>
-                                <label style="font-size:11px; font-weight:700; color:#6ee7b7; display:block; margin-bottom:6px;">Solusi</label>
-                                <textarea name="solusi" class="input-field" rows="3" {% if periode.is_locked %}disabled{% endif %} placeholder="Deskripsikan solusi...">{{ entry.solusi }}</textarea>
-                            </div>
-                        </div>
-                        <div style="margin-top:16px;">
-                            <label style="font-size:11px; font-weight:700; color:#93c5fd; display:block; margin-bottom:6px;">Rencana Tindak Lanjut (RTL)</label>
-                            <textarea name="rtl" class="input-field" rows="3" {% if periode.is_locked %}disabled{% endif %} placeholder="Deskripsikan RTL...">{{ entry.rtl }}</textarea>
-                        </div>
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;">
-                            <div>
-                                <label style="font-size:11px; font-weight:700; color:#cbd5e1; display:block; margin-bottom:6px;">Batas Waktu RTL</label>
-                                <input type="text" name="batas_waktu_rtl" class="input-field" value="{{ entry.batas_waktu_rtl }}" {% if periode.is_locked %}disabled{% endif %} placeholder="Contoh: 31 Desember 2026">
-                            </div>
-                            <div>
-                                <label style="font-size:11px; font-weight:700; color:#cbd5e1; display:block; margin-bottom:6px;">PIC RTL</label>
-                                <input type="text" name="pic_rtl" class="input-field" value="{{ entry.pic_rtl }}" {% if periode.is_locked %}disabled{% endif %} placeholder="Siapa yang bertanggung jawab...">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Bukti GDrive -->
-                    <div class="bento-card">
-                        <p class="bento-title">Upload Eviden / Bukti Dukung (G-Drive)</p>
-                        <p style="font-size:12px; color:#94a3b8; margin-bottom:16px;">Klik tombol untuk membuka folder G-Drive di tab baru, upload file Anda di sana, lalu centang kotak jika sudah selesai.</p>
-                        
-                        <div style="display:flex; flex-direction:column; gap:16px;">
-                            <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(8,12,30,0.5); padding:12px 16px; border-radius:8px;">
-                                <div>
-                                    <p style="font-size:13px; font-weight:700; color:white; margin-bottom:4px;">Bukti Kinerja</p>
-                                    <label class="checkbox-wrapper">
-                                        <input type="checkbox" name="is_bukti_kinerja_done" class="checkbox-input" {% if entry.is_bukti_kinerja_done %}checked{% endif %} {% if periode.is_locked %}disabled{% endif %}>
-                                        <span style="font-size:12px; color:#a855f7; font-weight:700;">Tandai Sudah Selesai Upload</span>
-                                    </label>
-                                </div>
-                                <a href="{{ entry.link_bukti_kinerja|default:'#' }}" target="_blank" class="upload-btn" {% if not entry.link_bukti_kinerja %}onclick="alert('Folder belum di-set admin'); return false;"{% endif %}>
-                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5l-2-2z"/></svg>
-                                    Buka Folder Upload
-                                </a>
-                            </div>
-
-                            <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(8,12,30,0.5); padding:12px 16px; border-radius:8px;">
-                                <div>
-                                    <p style="font-size:13px; font-weight:700; color:white; margin-bottom:4px;">Bukti Solusi</p>
-                                    <label class="checkbox-wrapper">
-                                        <input type="checkbox" name="is_bukti_solusi_done" class="checkbox-input" {% if entry.is_bukti_solusi_done %}checked{% endif %} {% if periode.is_locked %}disabled{% endif %}>
-                                        <span style="font-size:12px; color:#22c55e; font-weight:700;">Tandai Sudah Selesai Upload</span>
-                                    </label>
-                                </div>
-                                <a href="{{ entry.link_solusi|default:'#' }}" target="_blank" class="upload-btn" style="color:#4ade80; border-color:rgba(74,222,128,0.2); background:rgba(74,222,128,0.1);" {% if not entry.link_solusi %}onclick="alert('Folder belum di-set admin'); return false;"{% endif %}>
-                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5l-2-2z"/></svg>
-                                    Buka Folder Upload
-                                </a>
-                            </div>
-
-                            <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(8,12,30,0.5); padding:12px 16px; border-radius:8px;">
-                                <div>
-                                    <p style="font-size:13px; font-weight:700; color:white; margin-bottom:4px;">Bukti RTL</p>
-                                    <label class="checkbox-wrapper">
-                                        <input type="checkbox" name="is_bukti_tl_done" class="checkbox-input" {% if entry.is_bukti_tl_done %}checked{% endif %} {% if periode.is_locked %}disabled{% endif %}>
-                                        <span style="font-size:12px; color:#60a5fa; font-weight:700;">Tandai Sudah Selesai Upload</span>
-                                    </label>
-                                </div>
-                                <a href="{{ entry.link_bukti_tl_sebelumnya|default:'#' }}" target="_blank" class="upload-btn" style="color:#60a5fa; border-color:rgba(96,165,250,0.2); background:rgba(96,165,250,0.1);" {% if not entry.link_bukti_tl_sebelumnya %}onclick="alert('Folder belum di-set admin'); return false;"{% endif %}>
-                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5l-2-2z"/></svg>
-                                    Buka Folder Upload
-                                </a>
+                            
+                            <!-- Bukti RTL -->
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <label class="checkbox-wrapper" style="margin-right:2px;" title="Tandai Sudah Selesai Upload">
+                                    <input type="checkbox" name="is_bukti_tl_done" class="checkbox-input" {% if entry.is_bukti_tl_done %}checked{% endif %} {% if periode.is_locked %}disabled{% endif %}>
+                                </label>
+                                <button type="button" onclick="{% if not entry.link_bukti_tl_sebelumnya %}pikasAlert('Akses Dibatasi', 'Folder Google Drive belum disiapkan oleh Admin.', 'info'); return false;{% else %}openGDriveViewer('{{ entry.link_bukti_tl_sebelumnya|escapejs }}','Bukti TL'){% endif %}" class="viewer-btn" style="--btn-c:168,85,247;">
+                                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    BUKTI TL PERIODE LALU
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -278,6 +428,8 @@
         <button onclick="closeModal()" class="pikas-btn-primary" style="width:100%; padding:12px; font-size:13px;">Mengerti</button>
     </div>
 </div>
+
+{% include 'gdrive_viewer.html' %}
 
 <script>
     const details = document.querySelectorAll('.iku-detail');
@@ -456,5 +608,6 @@
             btn.disabled = false;
         }
     }
+
 </script>
 {% endblock %}

@@ -1,14 +1,13 @@
 {% extends 'crm_base.html' %}
 {% block title %}Detail Review — PIKAS{% endblock %}
-{% block header_title %}Detail IKU Dashboard{% endblock %}
+{% block breadcrumbs %}
+<a href="{% url 'dashboard' %}" class="breadcrumb-back">← Dashboard</a>
+<span class="breadcrumb-sep">›</span>
+<span class="breadcrumb-item">Review Detail</span>
+{% endblock %}
 
 {% block content %}
 <div style="margin-bottom:16px;">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <a href="{% url 'dashboard' %}" style="font-size:12px;font-weight:700;color:#818cf8;text-decoration:none;">← Dashboard</a>
-        <span style="color:#334155;font-size:12px;">›</span>
-        <span style="font-size:12px;font-weight:700;color:#94a3b8;">Review Detail</span>
-    </div>
     
     <!-- Header Minimalis & Status Pills -->
     <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;">
@@ -47,10 +46,6 @@
         transform: translateZ(0);
     }
     
-    /* GDrive Tree Loader */
-    .tree-spinner { width:24px; height:24px; border:3px solid rgba(168,85,247,0.1); border-top-color:#a855f7; border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto; }
-    .tree-loading-state { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; gap:12px; }
-    .tree-loading-text { font-size:12px; font-weight:700; color:#94a3b8; letter-spacing:0.5px; }
 
     .viewer-btn { 
         padding:10px 18px; 
@@ -277,54 +272,11 @@
     </div>
 </div>
 
-<!-- GDRIVE VIEWER MODAL -->
-<div id="gdriveModal" style="display:none; position:fixed; inset:0; z-index:10000; background:rgba(8,12,30,0.4); backdrop-filter:blur(16px) saturate(1.2); align-items:center; justify-content:center; padding:24px;">
-    <div style="width:100%; max-width:1400px; height:90vh; background:rgba(15,20,40,0.65); backdrop-filter:blur(24px) saturate(1.4); border:1px solid rgba(148,163,184,0.15); border-radius:16px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 32px 64px -16px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05) inset;">
-        <div style="padding:16px 20px; border-bottom:1px solid rgba(148,163,184,0.1); display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <div style="width:32px;height:32px;border-radius:8px;background:rgba(168,85,247,0.1);display:flex;align-items:center;justify-content:center;">
-                    <svg width="18" height="18" fill="none" stroke="#a855f7" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                </div>
-                <div>
-                    <h3 style="font-size:15px; font-weight:800; color:white;" id="gdriveTitle">GDrive Viewer</h3>
-                    <p style="font-size:11px; color:#64748b; margin-top:2px;" id="gdriveUrl"></p>
-                </div>
-            </div>
-            <div style="display:flex; gap:8px;">
-                <a id="gdriveOpenTab" href="#" target="_blank" style="padding:6px 12px; background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.2); border-radius:8px; color:#60a5fa; font-size:11px; font-weight:700; text-decoration:none;">Buka di Tab Baru</a>
-                <button onclick="closeGDriveViewer()" style="padding:6px 12px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); border-radius:8px; color:#f87171; font-size:11px; font-weight:700; cursor:pointer; font-family:inherit;">Tutup</button>
-            </div>
-        </div>
-        
-        <div style="flex:1; display:flex; overflow:hidden;">
-            <!-- LEFT: Directory Tree (1/3) -->
-            <div style="width:30%; border-right:1px solid rgba(148,163,184,0.1); background:rgba(8,12,30,0.2); display:flex; flex-direction:column; overflow:hidden;">
-                <div style="padding:12px 16px; border-bottom:1px solid rgba(148,163,184,0.1); background:rgba(15,20,40,0.4); display:flex; align-items:center; justify-content:space-between;">
-                    <span style="font-size:11px; font-weight:800; color:#a855f7; letter-spacing:1px;">DIRECTORY TREE</span>
-                </div>
-                <div id="gdriveTree" style="flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:6px;">
-                    <!-- File items will be injected here -->
-                </div>
-            </div>
-            
-            <!-- RIGHT: Preview (2/3) -->
-            <div style="flex:1; position:relative; background:rgba(5,8,22,0.4); display:flex; align-items:center; justify-content:center;">
-                <div id="gdrivePlaceholder" style="text-align:center;">
-                    <svg width="48" height="48" fill="none" stroke="#334155" viewBox="0 0 24 24" style="margin:0 auto 12px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                    <p style="color:#64748b; font-size:14px; font-weight:700;">Pilih file di sebelah kiri untuk melihat preview</p>
-                </div>
-                <iframe id="gdriveIframe" src="" style="width:100%; height:100%; border:none; display:none;"></iframe>
-            </div>
-        </div>
-    </div>
-</div>
+{% include 'gdrive_viewer.html' %}
 
 
 <script>
-    // Pindahkan modal ke luar main-wrapper agar tidak terkekang oleh z-index parent
-    document.addEventListener("DOMContentLoaded", function() {
-        document.body.appendChild(document.getElementById('gdriveModal'));
-    });
+
 
     // Inisialisasi: sembunyikan semua detail di awal
     const details = document.querySelectorAll('.iku-detail');
@@ -374,168 +326,6 @@
         });
     }
 
-    /* GDrive Viewer */
-    function formatBytes(bytes, decimals = 2) {
-        if (!+bytes) return '0 Bytes';
-        const k = 1024, dm = decimals < 0 ? 0 : decimals, sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
-    }
 
-    function formatDate(dateStr) {
-        if(!dateStr) return '-';
-        const d = new Date(dateStr);
-        return d.toLocaleDateString('id-ID') + ' ' + d.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
-    }
-
-    async function openGDriveViewer(url, title) {
-        if (!url || url.trim() === '') {
-            alert('Bukti / Dokumen belum ditambahkan oleh Tim Kerja.');
-            return;
-        }
-
-        const modal = document.getElementById('gdriveModal');
-        document.getElementById('gdriveTitle').textContent = title + ' — GDrive Viewer';
-        document.getElementById('gdriveUrl').textContent = url;
-        document.getElementById('gdriveOpenTab').href = url;
-        
-        // Reset panes
-        document.getElementById('gdrivePlaceholder').style.display = 'block';
-        document.getElementById('gdriveIframe').style.display = 'none';
-        document.getElementById('gdriveIframe').src = '';
-        
-        const tree = document.getElementById('gdriveTree');
-        tree.innerHTML = `
-            <div class="tree-loading-state">
-                <div class="tree-spinner"></div>
-                <div class="tree-loading-text">Menyiapkan Struktur Folder...</div>
-            </div>
-        `;
-        
-        modal.style.display = 'flex';
-        
-        try {
-            // Fetch everything recursively
-            const fullTree = await fetchFullTree(url);
-            tree.innerHTML = '';
-            
-            if (fullTree.length === 0) {
-                tree.innerHTML = '<div style="color:#475569; font-size:12px; text-align:center; padding:40px;">Folder Kosong</div>';
-                return;
-            }
-
-            renderTree(fullTree, tree, 0);
-            
-        } catch (e) {
-            tree.innerHTML = `<div style="color:#f87171; font-size:11px; padding:12px; background:rgba(239,68,68,0.1); border-radius:8px;">Gagal memuat: ${e.message}</div>`;
-            // Fallback for single file
-            var match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-            if (match) previewFile(match[1]);
-        }
-    }
-
-    async function fetchFullTree(url) {
-        const res = await fetch(`/api/drive-explorer/?url=${encodeURIComponent(url)}`);
-        const data = await res.json();
-        if (!res.ok || data.error) throw new Error(data.error || 'Fetch failed');
-        
-        const items = data.items || [];
-        
-        // Sort items
-        items.sort((a, b) => {
-            const af = a.mimeType === 'application/vnd.google-apps.folder';
-            const bf = b.mimeType === 'application/vnd.google-apps.folder';
-            if (af && !bf) return -1;
-            if (!af && bf) return 1;
-            return a.name.localeCompare(b.name);
-        });
-
-        // Recursively fetch subfolders in parallel
-        await Promise.all(items.map(async item => {
-            if (item.mimeType === 'application/vnd.google-apps.folder') {
-                const folderUrl = `https://drive.google.com/drive/folders/${item.id}`;
-                item.children = await fetchFullTree(folderUrl);
-            }
-        }));
-
-        return items;
-    }
-
-    function renderTree(items, container, level) {
-        items.forEach(item => {
-            const isFolder = item.mimeType === 'application/vnd.google-apps.folder';
-            const itemWrapper = document.createElement('div');
-            itemWrapper.className = 'tree-item-wrapper';
-            
-            const row = document.createElement('div');
-            row.className = 'tree-row';
-            row.style.cssText = `display:flex; align-items:center; gap:8px; padding:6px 10px 6px ${12 + level*16}px; cursor:pointer; transition:0.2s; border-radius:6px; margin:1px 0;`;
-            
-            const iconColor = isFolder ? '#fbbf24' : '#60a5fa';
-            const chevron = isFolder ? `<svg class="chevron" width="12" height="12" fill="none" stroke="#64748b" viewBox="0 0 24 24" style="transition:0.2s; transform:rotate(90deg);"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>` : `<div style="width:12px;"></div>`;
-            const mainIcon = isFolder 
-                ? `<svg width="16" height="16" fill="none" stroke="${iconColor}" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>`
-                : `<svg width="16" height="16" fill="none" stroke="${iconColor}" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>`;
-
-            row.innerHTML = `
-                ${chevron}
-                <div style="flex-shrink:0;">${mainIcon}</div>
-                <div style="flex:1; min-width:0;">
-                    <div style="color:#e2e8f0; font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.name}</div>
-                    <div style="color:#475569; font-size:9px; margin-top:1px;">${formatDate(item.modifiedTime)}${!isFolder ? ' • '+formatBytes(item.size) : ''}</div>
-                </div>
-            `;
-
-            row.onmouseover = () => { if(!row.classList.contains('selected')) row.style.background = 'rgba(148,163,184,0.05)'; };
-            row.onmouseout = () => { if(!row.classList.contains('selected')) row.style.background = ''; };
-
-            const childContainer = document.createElement('div');
-            childContainer.style.display = 'block'; // Expanded by default
-
-            if (isFolder && item.children) {
-                renderTree(item.children, childContainer, level + 1);
-            }
-
-            row.onclick = () => {
-                if (isFolder) {
-                    const isExpanded = childContainer.style.display === 'block';
-                    const chev = row.querySelector('.chevron');
-                    if (isExpanded) {
-                        childContainer.style.display = 'none';
-                        if(chev) chev.style.transform = 'rotate(0deg)';
-                    } else {
-                        childContainer.style.display = 'block';
-                        if(chev) chev.style.transform = 'rotate(90deg)';
-                    }
-                } else {
-                    document.querySelectorAll('.tree-row').forEach(r => {
-                        r.classList.remove('selected');
-                        r.style.background = '';
-                    });
-                    row.classList.add('selected');
-                    row.style.background = 'rgba(168,85,247,0.15)';
-                    previewFile(item.id);
-                }
-            };
-
-            itemWrapper.appendChild(row);
-            itemWrapper.appendChild(childContainer);
-            container.appendChild(itemWrapper);
-        });
-    }
-
-    function previewFile(id) {
-        document.getElementById('gdrivePlaceholder').style.display = 'none';
-        document.getElementById('gdriveIframe').style.display = 'block';
-        document.getElementById('gdriveIframe').src = `https://drive.google.com/file/d/${id}/preview`;
-    }
-
-    function closeGDriveViewer() {
-        document.getElementById('gdriveModal').style.display = 'none';
-        document.getElementById('gdriveIframe').src = '';
-    }
-    document.getElementById('gdriveModal').addEventListener('click', function(e) {
-        if (e.target === this) closeGDriveViewer();
-    });
 </script>
 {% endblock %}
