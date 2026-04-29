@@ -23,6 +23,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project
 COPY . /app/
 
+# Make entrypoint executable
+RUN chmod +x /app/entrypoint.sh
+
 # Create directory for static files
 RUN mkdir -p /app/staticfiles
 
@@ -33,5 +36,6 @@ RUN SECRET_KEY=collectstatic-dummy DEBUG=False python manage.py collectstatic --
 # Expose port
 EXPOSE 8000
 
-# Run migrations and start gunicorn
-CMD ["sh", "-c", "python manage.py migrate && gunicorn --bind 0.0.0.0:8000 --workers 3 pikas_project.wsgi:application"]
+# Run entrypoint script and start gunicorn
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "pikas_project.wsgi:application"]
