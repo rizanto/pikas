@@ -19,9 +19,12 @@ email = os.getenv('DJANGO_SUPERUSER_EMAIL', 'admin@pikas.com')
 
 if not User.objects.filter(username=username).exists():
     print(f"Creating superuser: {username}")
-    User.objects.create_superuser(username, email, password)
+    User.objects.create_superuser(username, email, password, role='ADMIN')
 else:
-    print(f"Superuser {username} already exists.")
+    print(f"Superuser {username} already exists. Ensuring role is ADMIN.")
+    u = User.objects.get(username=username)
+    u.role = 'ADMIN'
+    u.save()
 END
 
 echo "Starting server..."
