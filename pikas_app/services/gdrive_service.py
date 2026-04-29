@@ -4,12 +4,25 @@ from django.core.cache import cache
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 
+import os
+import json
+
 SERVICE_ACCOUNT_FILE = settings.BASE_DIR / 'service_account.json'
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
 
 def get_drive_service():
-    creds = Credentials.from_service_account_file(
-        str(SERVICE_ACCOUNT_FILE), scopes=SCOPES)
+    sa_json = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
+    if sa_json:
+        try:
+            info = json.loads(sa_json)
+            creds = Credentials.from_service_account_info(info, scopes=SCOPES)
+        except Exception as e:
+            raise ValueError(f"Error parsing GOOGLE_SERVICE_ACCOUNT_JSON in GDrive: {str(e)}")
+    else:
+        if not os.path.exists(SERVICE_ACCOUNT_FILE):
+            raise FileNotFoundError(f"Service account file not found at {SERVICE_ACCOUNT_FILE} and GOOGLE_SERVICE_ACCOUNT_JSON env var is empty.")
+        creds = Credentials.from_service_account_file(str(SERVICE_ACCOUNT_FILE), scopes=SCOPES)
+    
     return build('drive', 'v3', credentials=creds)
 
 def extract_folder_id(url: str) -> str:
