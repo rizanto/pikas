@@ -507,6 +507,8 @@ def update_entry_api(request, iku_id):
             entry.proksi_x_realisasi = str(data.get('proksi_x_realisasi', ''))
         if 'proksi_y_realisasi' in data:
             entry.proksi_y_realisasi = str(data.get('proksi_y_realisasi', ''))
+        if 'notulen' in data:
+            entry.notulen = data['notulen']
         if 'kendala' in data:
             entry.kendala = data['kendala']
         if 'solusi' in data:

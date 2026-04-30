@@ -240,6 +240,9 @@ class FRAEntry(models.Model):
     proksi_x_realisasi = models.CharField(max_length=100, blank=True, default='')
     proksi_y_realisasi = models.CharField(max_length=100, blank=True, default='')
 
+    # Notulen / Catatan Basis Data (Internal PIKAS)
+    notulen = models.TextField(blank=True, default='', help_text="Catatan rincian basis data (X/Y atau sumber data utama)")
+
     # State & Audit Flags
     is_done = models.BooleanField(default=False)
     is_dirty = models.BooleanField(

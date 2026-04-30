@@ -35,7 +35,7 @@
     .iku-tab:hover { background:rgba(148,163,184,0.05); }
     .iku-tab.active { background:rgba(168,85,247,0.1); border-color:rgba(168,85,247,0.3); }
     
-    .bento-card { background:rgba(15,20,40,0.45); border:1px solid rgba(148,163,184,0.06); border-radius:12px; padding:16px; position:relative; overflow:hidden; }
+    .bento-card { background:rgba(15,20,40,0.45); border:1px solid rgba(148,163,184,0.06); border-radius:12px; padding:20px; position:relative; overflow:hidden; }
     .bento-title { font-size:10px; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
     .bento-val { font-size:13px; font-weight:700; color:#f1f5f9; }
     .bento-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:12px; }
@@ -114,7 +114,7 @@
 
     <!-- Area Kanan -->
     <div class="glass-card" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
-        <div class="detail-scroll" style="padding:24px; position:relative;" id="detail-container">
+        <div class="detail-scroll" style="padding:32px; position:relative;" id="detail-container">
             
             <div id="empty-state" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; color:#475569;">
                 <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/></svg>
@@ -122,8 +122,8 @@
             </div>
 
             {% for entry in entries %}
-            <div class="iku-detail" id="detail-{{ entry.id }}" style="display:none; animation: fadeIn 0.2s ease-out; display:flex; flex-direction:column; gap:16px;">
-                <form id="form-{{ entry.id }}" onsubmit="saveEntry(event, '{{ entry.iku.id }}', '{{ entry.id }}', {{ entry.iku.has_proxy|yesno:'true,false' }})" style="display:contents;">
+            <div class="iku-detail" id="detail-{{ entry.id }}" style="display:none; animation: fadeIn 0.2s ease-out;">
+                <form id="form-{{ entry.id }}" onsubmit="saveEntry(event, '{{ entry.iku.id }}', '{{ entry.id }}', {{ entry.iku.has_proxy|yesno:'true,false' }})" style="display:flex; flex-direction:column; gap:24px;">
                     <!-- Identitas -->
                     <div class="bento-card" style="border-left:3px solid #a855f7;">
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
@@ -252,7 +252,7 @@
                     {% if entry.iku.has_proxy %}
                     <div class="bento-card" style="border:1px solid rgba(249,115,22,0.2);">
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-                            <span style="font-size:10px;font-weight:800;padding:4px 8px;border-radius:6px;background:rgba(249,115,22,0.1);color:#fdba74;">KOMPONEN PROKSI</span>
+                            <span style="font-size:10px;font-weight:800;padding:4px 8px;border-radius:6px;background:rgba(249,115,22,0.1);color:#fdba74;">KOMPONEN BASIS DATA</span>
                         </div>
                         <div style="background:rgba(8,12,30,0.4); padding:12px; border-radius:8px;">
                                 <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
@@ -332,7 +332,16 @@
                             </div>
                         </div>
                     {% endif %}
-
+                    
+                    <!-- Notulen (Internal PIKAS) -->
+                    <div class="bento-card" style="border-left:3px solid #22c55e; padding:20px;">
+                        <p class="bento-title" style="color:#22c55e; margin-bottom:12px;">Notulen</p>
+                        <div style="background:rgba(8,12,30,0.4); padding:14px; border-radius:10px; border:1px solid rgba(34,197,94,0.1);">
+                            <textarea name="notulen" style="width:100%; background:transparent; border:none; outline:none; font-size:12px; color:#cbd5e1; font-family:inherit; min-height:80px; line-height:1.6;" rows="4" {% if periode.is_locked %}disabled{% endif %} placeholder="Tuliskan rincian basis data atau sumber data utama di sini...">{{ entry.notulen }}</textarea>
+                        </div>
+                        <p style="font-size:10px; color:#64748b; margin-top:8px; font-style:italic;">* Rincian angka (X/Y) atau penjelasan sumber data utama.</p>
+                    </div>
+                    
                     <!-- Isian Kualitatif & Eviden -->
                     <div class="bento-card">
                         <p class="bento-title">Evaluasi Kualitatif & Eviden</p>
@@ -521,6 +530,7 @@
             rtl: formData.get('rtl') || '',
             pic_rtl: formData.get('pic_rtl') || '',
             batas_waktu_rtl: formData.get('batas_waktu_rtl') || '',
+            notulen: formData.get('notulen') || '',
             is_bukti_kinerja_done: form.querySelector('[name="is_bukti_kinerja_done"]').checked,
             is_bukti_solusi_done: form.querySelector('[name="is_bukti_solusi_done"]').checked,
             is_bukti_tl_done: form.querySelector('[name="is_bukti_tl_done"]').checked,
@@ -542,6 +552,7 @@
             if (!data.rtl.trim()) errors.push("Rencana Tindak Lanjut (RTL)");
             if (!data.pic_rtl.trim()) errors.push("PIC RTL");
             if (!data.batas_waktu_rtl.trim()) errors.push("Batas Waktu RTL");
+            if (!data.notulen.trim()) errors.push("Notulen");
             
             if (!hasProxy) {
                 if (!data.realisasi.trim()) errors.push("Realisasi TW Berjalan");
