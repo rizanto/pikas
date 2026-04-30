@@ -279,6 +279,48 @@
 
 
 <script>
+    const details = document.querySelectorAll('.iku-detail');
+    const tabs = document.querySelectorAll('.iku-tab');
+    const emptyState = document.getElementById('empty-state');
 
+    // Sembunyikan semua detail di awal
+    details.forEach(d => d.style.display = 'none');
+
+    function showIkuDetail(id) {
+        // Sembunyikan empty state watermark
+        if (emptyState) emptyState.style.display = 'none';
+        
+        // Reset semua detail & tab
+        details.forEach(d => d.style.display = 'none');
+        tabs.forEach(t => t.classList.remove('active'));
+
+        // Tampilkan yang dipilih
+        const detail = document.getElementById('detail-' + id);
+        const tab = document.getElementById('tab-' + id);
+        
+        if (detail) detail.style.display = 'flex';
+        if (tab) {
+            tab.classList.add('active');
+            tab.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+
+    function filterIku() {
+        const input = document.getElementById('searchIku').value.toLowerCase();
+        tabs.forEach(tab => {
+            const text = tab.innerText.toLowerCase();
+            if (text.includes(input)) tab.style.display = '';
+            else tab.style.display = 'none';
+        });
+    }
+
+    // Jika ada target_entry_id dari URL, buka otomatis
+    document.addEventListener("DOMContentLoaded", function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetId = urlParams.get('entry');
+        if (targetId) {
+            showIkuDetail(targetId);
+        }
+    });
 </script>
 {% endblock %}

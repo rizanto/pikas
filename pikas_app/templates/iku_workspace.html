@@ -363,7 +363,7 @@
                                 <label class="checkbox-wrapper" style="margin-right:2px;" title="Tandai Sudah Selesai Upload">
                                     <input type="checkbox" name="is_bukti_kinerja_done" class="checkbox-input" {% if entry.is_bukti_kinerja_done %}checked{% endif %} {% if periode.is_locked %}disabled{% endif %}>
                                 </label>
-                                <button type="button" onclick="{% if not entry.link_bukti_kinerja %}pikasAlert('Akses Dibatasi', 'Folder Google Drive belum disiapkan oleh Admin.', 'info'); return false;{% else %}openGDriveViewer('{{ entry.link_bukti_kinerja|escapejs }}','Bukti Kinerja'){% endif %}" class="viewer-btn" style="--btn-c:59,130,246;">
+                                <button type="button" onclick="{% if not entry.link_bukti_kinerja %}showModal('error', 'Akses Dibatasi', 'Folder Google Drive belum disiapkan oleh Admin.'); return false;{% else %}openGDriveViewer('{{ entry.link_bukti_kinerja|escapejs }}','Bukti Kinerja'){% endif %}" class="viewer-btn" style="--btn-c:59,130,246;">
                                     <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                     BUKTI KINERJA
                                 </button>
@@ -374,7 +374,7 @@
                                 <label class="checkbox-wrapper" style="margin-right:2px;" title="Tandai Sudah Selesai Upload">
                                     <input type="checkbox" name="is_bukti_solusi_done" class="checkbox-input" {% if entry.is_bukti_solusi_done %}checked{% endif %} {% if periode.is_locked %}disabled{% endif %}>
                                 </label>
-                                <button type="button" onclick="{% if not entry.link_solusi %}pikasAlert('Akses Dibatasi', 'Folder Google Drive belum disiapkan oleh Admin.', 'info'); return false;{% else %}openGDriveViewer('{{ entry.link_solusi|escapejs }}','Eviden Solusi'){% endif %}" class="viewer-btn" style="--btn-c:34,197,94;">
+                                <button type="button" onclick="{% if not entry.link_solusi %}showModal('error', 'Akses Dibatasi', 'Folder Google Drive belum disiapkan oleh Admin.'); return false;{% else %}openGDriveViewer('{{ entry.link_solusi|escapejs }}','Eviden Solusi'){% endif %}" class="viewer-btn" style="--btn-c:34,197,94;">
                                     <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                     BUKTI SOLUSI
                                 </button>
@@ -385,7 +385,7 @@
                                 <label class="checkbox-wrapper" style="margin-right:2px;" title="Tandai Sudah Selesai Upload">
                                     <input type="checkbox" name="is_bukti_tl_done" class="checkbox-input" {% if entry.is_bukti_tl_done %}checked{% endif %} {% if periode.is_locked %}disabled{% endif %}>
                                 </label>
-                                <button type="button" onclick="{% if not entry.link_bukti_tl_sebelumnya %}pikasAlert('Akses Dibatasi', 'Folder Google Drive belum disiapkan oleh Admin.', 'info'); return false;{% else %}openGDriveViewer('{{ entry.link_bukti_tl_sebelumnya|escapejs }}','Bukti TL'){% endif %}" class="viewer-btn" style="--btn-c:168,85,247;">
+                                <button type="button" onclick="{% if not entry.link_bukti_tl_sebelumnya %}showModal('error', 'Akses Dibatasi', 'Folder Google Drive belum disiapkan oleh Admin.'); return false;{% else %}openGDriveViewer('{{ entry.link_bukti_tl_sebelumnya|escapejs }}','Bukti TL'){% endif %}" class="viewer-btn" style="--btn-c:168,85,247;">
                                     <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                     BUKTI TL PERIODE LALU
                                 </button>
@@ -508,58 +508,66 @@
     async function saveEntry(e, ikuId, entryId, hasProxy) {
         e.preventDefault();
         const form = e.target;
-        
-        const data = {
-            realisasi: form.querySelector('[name="realisasi"]').value,
-            kendala: form.querySelector('[name="kendala"]').value,
-            solusi: form.querySelector('[name="solusi"]').value,
-            rtl: form.querySelector('[name="rtl"]').value,
-            pic_rtl: form.querySelector('[name="pic_rtl"]').value,
-            batas_waktu_rtl: form.querySelector('[name="batas_waktu_rtl"]').value,
-            is_bukti_kinerja_done: form.querySelector('[name="is_bukti_kinerja_done"]').checked,
-            is_bukti_solusi_done: form.querySelector('[name="is_bukti_solusi_done"]').checked,
-            is_bukti_tl_done: form.querySelector('[name="is_bukti_tl_done"]').checked,
-            is_done: form.querySelector('[name="is_done"]').checked,
-        };
-        
-        const px = form.querySelector('[name="proksi_x_realisasi"]');
-        if (px) data.proksi_x_realisasi = px.value;
-        const py = form.querySelector('[name="proksi_y_realisasi"]');
-        if (py) data.proksi_y_realisasi = py.value;
-        
         const btn = form.querySelector('.save-btn');
         const originalText = btn.innerHTML;
         
-        if (data.is_done) {
-            const requiredFields = [
-                { val: data.kendala, name: 'Kendala' },
-                { val: data.solusi, name: 'Solusi' },
-                { val: data.rtl, name: 'Rencana Tindak Lanjut (RTL)' },
-                { val: data.pic_rtl, name: 'PIC RTL' },
-                { val: data.batas_waktu_rtl, name: 'Batas Waktu RTL' }
-            ];
+        // Gunakan FormData agar lebih akurat mengambil nilai dari form yang sedang disubmit
+        const formData = new FormData(form);
+        const isDone = form.querySelector('[name="is_done"]').checked;
+        
+        const data = {
+            kendala: formData.get('kendala') || '',
+            solusi: formData.get('solusi') || '',
+            rtl: formData.get('rtl') || '',
+            pic_rtl: formData.get('pic_rtl') || '',
+            batas_waktu_rtl: formData.get('batas_waktu_rtl') || '',
+            is_bukti_kinerja_done: form.querySelector('[name="is_bukti_kinerja_done"]').checked,
+            is_bukti_solusi_done: form.querySelector('[name="is_bukti_solusi_done"]').checked,
+            is_bukti_tl_done: form.querySelector('[name="is_bukti_tl_done"]').checked,
+            is_done: isDone,
+            realisasi: formData.get('realisasi') || ''
+        };
+        
+        if (hasProxy) {
+            data.proksi_x_realisasi = formData.get('proksi_x_realisasi') || '';
+            data.proksi_y_realisasi = formData.get('proksi_y_realisasi') || '';
+        }
+        
+        // --- VALIDASI ---
+        let errors = [];
+        
+        // Minimal Kendala & Solusi harus ada isinya untuk setiap simpan
+        if (!data.kendala.trim()) errors.push("Kendala");
+        if (!data.solusi.trim()) errors.push("Solusi");
+        
+        // Jika status "SELESAI", maka SEMUA wajib diisi
+        if (isDone) {
+            if (!data.rtl.trim()) errors.push("Rencana Tindak Lanjut (RTL)");
+            if (!data.pic_rtl.trim()) errors.push("PIC RTL");
+            if (!data.batas_waktu_rtl.trim()) errors.push("Batas Waktu RTL");
             
-            // Tambahkan Realisasi jika TIDAK ada proksi
             if (!hasProxy) {
-                requiredFields.push({ val: data.realisasi, name: 'Realisasi TW Berjalan' });
+                if (!data.realisasi.trim()) errors.push("Realisasi TW Berjalan");
+            } else {
+                if (!data.proksi_x_realisasi.trim()) errors.push("Realisasi Proksi X");
+                if (!data.proksi_y_realisasi.trim()) errors.push("Realisasi Proksi Y");
             }
-            
-            if (px) requiredFields.push({ val: data.proksi_x_realisasi, name: 'Realisasi Proksi X' });
-            if (py) requiredFields.push({ val: data.proksi_y_realisasi, name: 'Realisasi Proksi Y' });
 
-            for (let f of requiredFields) {
-                if (!f.val || String(f.val).trim() === '') {
-                    showModal('error', 'Validasi Gagal', 'Tidak dapat menandai selesai: Kolom ' + f.name + ' masih kosong.');
+            if (errors.length === 0) {
+                // Jika isian teks sudah lengkap, cek 3 checkbox bukti
+                if (!data.is_bukti_kinerja_done || !data.is_bukti_solusi_done || !data.is_bukti_tl_done) {
+                    showModal('error', 'Validasi Gagal', 'Semua bukti (Kinerja, Solusi, dan RTL) wajib dichecklist untuk menandai SELESAI.');
                     return;
                 }
             }
+        }
 
-            if (!data.is_bukti_kinerja_done || !data.is_bukti_solusi_done || !data.is_bukti_tl_done) {
-                showModal('error', 'Validasi Gagal', 'Tidak dapat menandai selesai: Seluruh checkbox Bukti Kinerja, Solusi, dan RTL harus dichecklist.');
-                return;
-            }
+        if (errors.length > 0) {
+            showModal('error', 'Lengkapi Data', 'Mohon isi kolom berikut sebelum menyimpan: ' + errors.join(', '));
+            return;
         }
         
+        // Tampilkan loading
         btn.innerHTML = '<span class="tree-spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;"></span> Menyimpan...';
         btn.disabled = true;
         
@@ -573,23 +581,15 @@
                 btn.innerHTML = '✓ Tersimpan!';
                 btn.style.background = '#22c55e';
                 
-                // Update sidebar status
                 const statusSpan = document.getElementById('tab-status-' + entryId);
                 if (statusSpan) {
-                    if (data.is_done) {
-                        statusSpan.innerText = 'Selesai';
-                        statusSpan.style.color = '#22c55e';
-                    } else {
-                        statusSpan.innerText = 'Pending';
-                        statusSpan.style.color = '#f97316';
-                    }
+                    statusSpan.innerText = data.is_done ? 'Selesai' : 'Pending';
+                    statusSpan.style.color = data.is_done ? '#22c55e' : '#f97316';
                 }
                 const editedSpan = document.getElementById('tab-edited-' + entryId);
-                if (editedSpan) {
-                    editedSpan.style.display = 'inline-block';
-                }
+                if (editedSpan) editedSpan.style.display = 'inline-block';
                 
-                showModal('success', 'Berhasil', 'Pekerjaan Anda berhasil disimpan ke sistem.');
+                showModal('success', 'Berhasil', 'Pekerjaan Anda berhasil disimpan.');
                 
                 setTimeout(() => { 
                     btn.innerHTML = originalText; 
@@ -598,12 +598,12 @@
                 }, 2000);
             } else {
                 const err = await res.json();
-                showModal('error', 'Gagal Menyimpan', err.error || 'Terjadi kesalahan sistem.');
+                showModal('error', 'Gagal', err.error || 'Terjadi kesalahan sistem.');
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             }
         } catch(err) {
-            showModal('error', 'Kesalahan Jaringan', 'Periksa koneksi internet Anda dan coba lagi.');
+            showModal('error', 'Koneksi Gagal', 'Periksa jaringan internet Anda.');
             btn.innerHTML = originalText;
             btn.disabled = false;
         }
