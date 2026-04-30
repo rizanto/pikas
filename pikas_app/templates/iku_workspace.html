@@ -533,15 +533,12 @@
             data.proksi_y_realisasi = formData.get('proksi_y_realisasi') || '';
         }
         
-        // --- VALIDASI ---
-        let errors = [];
-        
-        // Minimal Kendala & Solusi harus ada isinya untuk setiap simpan
-        if (!data.kendala.trim()) errors.push("Kendala");
-        if (!data.solusi.trim()) errors.push("Solusi");
-        
-        // Jika status "SELESAI", maka SEMUA wajib diisi
+        // --- VALIDASI KETAT HANYA JIKA DISET SELESAI ---
         if (isDone) {
+            let errors = [];
+            
+            if (!data.kendala.trim()) errors.push("Kendala");
+            if (!data.solusi.trim()) errors.push("Solusi");
             if (!data.rtl.trim()) errors.push("Rencana Tindak Lanjut (RTL)");
             if (!data.pic_rtl.trim()) errors.push("PIC RTL");
             if (!data.batas_waktu_rtl.trim()) errors.push("Batas Waktu RTL");
@@ -553,18 +550,16 @@
                 if (!data.proksi_y_realisasi.trim()) errors.push("Realisasi Proksi Y");
             }
 
-            if (errors.length === 0) {
-                // Jika isian teks sudah lengkap, cek 3 checkbox bukti
-                if (!data.is_bukti_kinerja_done || !data.is_bukti_solusi_done || !data.is_bukti_tl_done) {
-                    showModal('error', 'Validasi Gagal', 'Semua bukti (Kinerja, Solusi, dan RTL) wajib dichecklist untuk menandai SELESAI.');
-                    return;
-                }
+            if (errors.length > 0) {
+                showModal('error', 'Lengkapi Data', 'Untuk menandai SELESAI, kolom berikut wajib diisi: ' + errors.join(', '));
+                return; // STOP! Jangan lanjut ke fetch
             }
-        }
 
-        if (errors.length > 0) {
-            showModal('error', 'Lengkapi Data', 'Mohon isi kolom berikut sebelum menyimpan: ' + errors.join(', '));
-            return;
+            // Cek 3 checkbox bukti
+            if (!data.is_bukti_kinerja_done || !data.is_bukti_solusi_done || !data.is_bukti_tl_done) {
+                showModal('error', 'Validasi Gagal', 'Semua bukti (Kinerja, Solusi, dan RTL) wajib dichecklist untuk menandai SELESAI.');
+                return;
+            }
         }
         
         // Tampilkan loading
