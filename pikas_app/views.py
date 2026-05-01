@@ -630,7 +630,7 @@ def manage_ro_view(request):
     if tahuns.exists():
         selected_tahun = tahuns.get(id=tahun_id) if tahun_id else tahuns.first()
 
-    ros = MasterRO.objects.filter(tahun=selected_tahun).order_by('kode_ro') if selected_tahun else []
+    ros = MasterRO.objects.filter(tahun=selected_tahun).order_by('kode_iku', 'kode_ro') if selected_tahun else []
 
     grouped_ros = {}
     if ros:
@@ -641,7 +641,20 @@ def manage_ro_view(request):
                     grouped_ros[iku_code] = []
                 grouped_ros[iku_code].append(ro)
     
-    grouped_ros_sorted = dict(sorted(grouped_ros.items()))
+    # Fetch IKU names from MasterIKU
+    iku_codes = list(grouped_ros.keys())
+    iku_objs = MasterIKU.objects.filter(kode_indikator__in=iku_codes).values('kode_indikator', 'indikator')
+    iku_map = {item['kode_indikator']: item['indikator'] for item in iku_objs}
+
+    # Restructure for template ease
+    final_grouped = {}
+    for iku_code, ro_list in grouped_ros.items():
+        final_grouped[iku_code] = {
+            'name': iku_map.get(iku_code, 'Indikator tidak ditemukan'),
+            'ros': ro_list
+        }
+    
+    final_grouped_sorted = dict(sorted(final_grouped.items()))
 
     # Prepare JSON for Monaco Editor
     ros_list_for_json = []
@@ -658,7 +671,7 @@ def manage_ro_view(request):
     return render(request, 'manage_ro.html', {
         'tahuns': tahuns,
         'selected_tahun': selected_tahun,
-        'grouped_ros': grouped_ros_sorted,
+        'grouped_ros': final_grouped_sorted,
         'ros_json_str': ros_json_str
     })
 
@@ -816,11 +829,25 @@ def capaian_output_view(request):
                 'bulans': bulans
             })
 
+    # Fetch IKU names
+    iku_codes = list(grouped_matrix.keys())
+    iku_objs = MasterIKU.objects.filter(kode_indikator__in=iku_codes).values('kode_indikator', 'indikator')
+    iku_map = {item['kode_indikator']: item['indikator'] for item in iku_objs}
+
+    final_matrix = {}
+    for iku_code, items in grouped_matrix.items():
+        final_matrix[iku_code] = {
+            'name': iku_map.get(iku_code, 'Indikator tidak ditemukan'),
+            'items': items
+        }
+    
+    final_matrix_sorted = dict(sorted(final_matrix.items()))
+
     return render(request, 'capaian_output.html', {
         'tahuns': tahuns,
         'selected_tahun': selected_tahun,
         'months': months,
-        'grouped_matrix': grouped_matrix
+        'grouped_matrix': final_matrix_sorted
     })
 
 @csrf_exempt

@@ -70,19 +70,22 @@
                 </thead>
                 <tbody id="roTableBody">
                     {% if grouped_ros %}
-                        {% for iku_kode, ros_list in grouped_ros.items %}
+                        {% for iku_kode, data in grouped_ros.items %}
                         <!-- Group Header -->
                         <tr class="ro-group-header">
                             <td colspan="3" style="padding:12px 20px; background:rgba(255,255,255,0.03); border-bottom:1px solid rgba(148,163,184,0.06);">
-                                <div style="display:flex; align-items:center; gap:8px;">
-                                    <span style="font-size:13px;font-weight:900;color:#a855f7;">IKU: {{ iku_kode }}</span>
-                                    <span style="font-size:11px;font-weight:700;color:#64748b;background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:4px;">{{ ros_list|length }} RO</span>
+                                <div style="display:flex; flex-direction:column; gap:4px;">
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span style="font-size:13px;font-weight:900;color:#a855f7;">IKU: {{ iku_kode }}</span>
+                                        <span style="font-size:11px;font-weight:700;color:#64748b;background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:4px;">{{ data.ros|length }} RO</span>
+                                    </div>
+                                    <div style="font-size:12px; font-weight:700; color:#94a3b8; line-height:1.4;">{{ data.name }}</div>
                                 </div>
                             </td>
                         </tr>
                         
-                        {% for ro in ros_list %}
-                        <tr class="ro-row" data-search="{{ iku_kode|lower }} {{ ro.kode_ro|lower }} {{ ro.nama_ro|lower }}" style="border-bottom:1px solid rgba(148,163,184,0.03);transition:background 0.15s;" onmouseover="this.style.background='rgba(148,163,184,0.03)'" onmouseout="this.style.background='transparent'">
+                        {% for ro in data.ros %}
+                        <tr class="ro-row" data-search="{{ iku_kode|lower }} {{ ro.kode_ro|lower }} {{ ro.nama_ro|lower }} {{ data.name|lower }}" style="border-bottom:1px solid rgba(148,163,184,0.03);transition:background 0.15s;" onmouseover="this.style.background='rgba(148,163,184,0.03)'" onmouseout="this.style.background='transparent'">
                             <td style="padding:12px 20px; vertical-align:top;">
                                 <div style="width:2px; height:100%; background:rgba(168,85,247,0.3); margin-left:10px;"></div>
                             </td>
