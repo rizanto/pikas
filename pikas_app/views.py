@@ -491,6 +491,38 @@ def operator_workspace_view(request, iku_id):
     
     previous_rtl = current_target_entry.previous_rtl if current_target_entry else ""
 
+    # Fetch RCO Peek Data for ALL IKUs based on the Triwulan
+    tw = periode.triwulan
+    tw_months = [(tw - 1) * 3 + 1, (tw - 1) * 3 + 2, (tw - 1) * 3 + 3]
+    
+    try:
+        from .models import TahunKerja, MasterRO, RealisasiRO
+        tahun_kerja = TahunKerja.objects.get(tahun=periode.tahun)
+        iku_codes = [e.iku.kode_indikator for e in qs]
+        all_ros = MasterRO.objects.filter(tahun=tahun_kerja).order_by('kode_ro')
+        ro_ids = []
+        for ro in all_ros:
+            iku_list = [i.strip() for i in ro.kode_iku.split(',') if i.strip()]
+            if any(k in iku_list for k in iku_codes):
+                ro_ids.append(ro.id)
+
+        realisasis = RealisasiRO.objects.filter(master_ro__id__in=ro_ids, bulan__in=tw_months)
+        
+        r_dict = {(r.master_ro_id, r.bulan): r.konten for r in realisasis}
+        
+        for entry in qs:
+            entry.rco_peek_data = []
+            ros_for_iku = [ro for ro in all_ros if entry.iku.kode_indikator in [i.strip() for i in ro.kode_iku.split(',') if i.strip()]]
+            for ro in ros_for_iku:
+                bulan_data = {m: r_dict.get((ro.id, m), "") for m in tw_months}
+                entry.rco_peek_data.append({
+                    'ro': ro,
+                    'bulans': bulan_data
+                })
+    except Exception:
+        for entry in qs:
+            entry.rco_peek_data = []
+
     return render(request, 'iku_workspace.html', {
         'periode': periode,
         'periodes': periodes,
@@ -499,6 +531,7 @@ def operator_workspace_view(request, iku_id):
         'total': total_iku,
         'done': done_iku,
         'previous_rtl': previous_rtl,
+        'tw_months': tw_months,
         'config_mapping_json': json.dumps(iku.cells),
     })
 
@@ -582,3 +615,321 @@ def drive_explorer_api(request):
         return JsonResponse({'items': items})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+from .models import TahunKerja, MasterRO, RealisasiRO
+
+# ============================================================
+# RCO (Realisasi Capaian Output) - ADMIN
+# ============================================================
+@login_required
+@role_required(['ADMIN'])
+def manage_ro_view(request):
+    tahuns = TahunKerja.objects.all().order_by('-tahun')
+    tahun_id = request.GET.get('tahun_id')
+    selected_tahun = None
+    if tahuns.exists():
+        selected_tahun = tahuns.get(id=tahun_id) if tahun_id else tahuns.first()
+
+    ros = MasterRO.objects.filter(tahun=selected_tahun).order_by('kode_ro') if selected_tahun else []
+
+    grouped_ros = {}
+    if ros:
+        for ro in ros:
+            iku_list = [i.strip() for i in ro.kode_iku.split(',') if i.strip()]
+            for iku_code in iku_list:
+                if iku_code not in grouped_ros:
+                    grouped_ros[iku_code] = []
+                grouped_ros[iku_code].append(ro)
+    
+    grouped_ros_sorted = dict(sorted(grouped_ros.items()))
+
+    # Prepare JSON for Monaco Editor
+    ros_list_for_json = []
+    for ro in ros:
+        ros_list_for_json.append({
+            "kode_iku": ro.kode_iku,
+            "kode_ro": ro.kode_ro,
+            "nama_ro": ro.nama_ro,
+            "kegiatan": ro.daftar_kegiatan
+        })
+    import json
+    ros_json_str = json.dumps(ros_list_for_json, indent=4) if ros_list_for_json else "[]"
+
+    return render(request, 'manage_ro.html', {
+        'tahuns': tahuns,
+        'selected_tahun': selected_tahun,
+        'grouped_ros': grouped_ros_sorted,
+        'ros_json_str': ros_json_str
+    })
+
+@csrf_exempt
+@login_required
+@role_required(['ADMIN'])
+def api_bulk_ro(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    try:
+        data = json.loads(request.body)
+        tahun_id = data.get('tahun_id')
+        json_data = data.get('json_data')
+        
+        tahun = TahunKerja.objects.get(id=tahun_id)
+        parsed_data = json.loads(json_data)
+        
+        if not isinstance(parsed_data, list):
+            raise ValueError("Format JSON harus berupa Array/List object.")
+            
+        updated_count = 0
+        added_count = 0
+        current_json_ro_codes = []
+        
+        for item in parsed_data:
+            # Normalisasi: Buang spasi depan/belakang
+            k_iku = str(item.get('kode_iku', '')).strip()
+            k_ro = str(item.get('kode_ro', '')).strip() 
+            n_ro = str(item.get('nama_ro', '')).strip()
+            kegiatan = str(item.get('kegiatan', '')).strip()
+            
+            if not k_ro or not n_ro or not k_iku:
+                continue
+            
+            current_json_ro_codes.append(k_ro)
+                
+            ro, created = MasterRO.objects.update_or_create(
+                tahun=tahun, kode_ro=k_ro,
+                defaults={
+                    'kode_iku': k_iku,
+                    'nama_ro': n_ro,
+                    'daftar_kegiatan': kegiatan
+                }
+            )
+            if created:
+                added_count += 1
+            else:
+                updated_count += 1
+        
+        # FULL SYNC: Hapus RO di database yang tidak ada di dalam JSON (Source of Truth)
+        # Hati-hati: Ini akan menghapus data RealisasiRO yang terkait jika RO dihapus
+        deleted_count, _ = MasterRO.objects.filter(tahun=tahun).exclude(kode_ro__in=current_json_ro_codes).delete()
+                
+        return JsonResponse({
+            'status': 'success', 
+            'added': added_count, 
+            'updated': updated_count,
+            'deleted': deleted_count
+        })
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Format JSON tidak valid.'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+@csrf_exempt
+@login_required
+@role_required(['ADMIN'])
+def api_manage_ro(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    try:
+        data = json.loads(request.body)
+        action = data.get('action')
+        
+        if action == 'add_tahun':
+            tahun = int(data.get('tahun'))
+            TahunKerja.objects.get_or_create(tahun=tahun)
+            return JsonResponse({'status': 'success'})
+            
+        elif action == 'set_active_tahun':
+            TahunKerja.objects.update(is_active=False)
+            TahunKerja.objects.filter(id=data.get('tahun_id')).update(is_active=True)
+            return JsonResponse({'status': 'success'})
+            
+        elif action == 'delete_tahun':
+            TahunKerja.objects.filter(id=data.get('tahun_id')).delete()
+            return JsonResponse({'status': 'success'})
+            
+        elif action == 'save_ro':
+            tahun = TahunKerja.objects.get(id=data.get('tahun_id'))
+            ro_id = data.get('id')
+            if ro_id:
+                ro = MasterRO.objects.get(id=ro_id)
+                ro.kode_iku = data.get('kode_iku')
+                ro.kode_ro = data.get('kode_ro')
+                ro.nama_ro = data.get('nama_ro')
+                ro.daftar_kegiatan = data.get('daftar_kegiatan')
+                ro.save()
+            else:
+                MasterRO.objects.create(
+                    tahun=tahun,
+                    kode_iku=data.get('kode_iku'),
+                    kode_ro=data.get('kode_ro'),
+                    nama_ro=data.get('nama_ro'),
+                    daftar_kegiatan=data.get('daftar_kegiatan')
+                )
+            return JsonResponse({'status': 'success'})
+            
+        elif action == 'delete_ro':
+            MasterRO.objects.filter(id=data.get('id')).delete()
+            return JsonResponse({'status': 'success'})
+            
+        return JsonResponse({'error': 'Unknown action'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+# ============================================================
+# RCO (Realisasi Capaian Output) - OPERATOR
+# ============================================================
+@login_required
+def capaian_output_view(request):
+    tahuns = TahunKerja.objects.all().order_by('-tahun')
+    tahun_id = request.GET.get('tahun_id')
+    selected_tahun = None
+    if tahuns.exists():
+        selected_tahun = tahuns.get(id=tahun_id) if tahun_id else tahuns.filter(is_active=True).first()
+        if not selected_tahun:
+            selected_tahun = tahuns.first()
+
+    months = list(range(1, 13))
+    grouped_matrix = {}
+    
+    if selected_tahun:
+        if request.user.role == 'OPERATOR':
+            entries = FRAEntry.objects.filter(pic_tim_kerja=request.user, iku__periode__tahun=selected_tahun.tahun)
+            assigned_ikus = list(set(entries.values_list('iku__kode_indikator', flat=True)))
+            ros = MasterRO.objects.filter(tahun=selected_tahun, kode_iku__in=assigned_ikus).order_by('kode_iku', 'kode_ro')
+        else:
+            ros = MasterRO.objects.filter(tahun=selected_tahun).order_by('kode_iku', 'kode_ro')
+
+        ro_ids = ros.values_list('id', flat=True)
+        realisasis = RealisasiRO.objects.filter(master_ro__id__in=ro_ids)
+        r_dict = {(r.master_ro_id, r.bulan): r.konten for r in realisasis}
+
+        for ro in ros:
+            if ro.kode_iku not in grouped_matrix:
+                grouped_matrix[ro.kode_iku] = []
+                
+            bulans = {}
+            for m in months:
+                bulans[m] = r_dict.get((ro.id, m), "")
+                
+            grouped_matrix[ro.kode_iku].append({
+                'ro': ro,
+                'bulans': bulans
+            })
+
+    return render(request, 'capaian_output.html', {
+        'tahuns': tahuns,
+        'selected_tahun': selected_tahun,
+        'months': months,
+        'grouped_matrix': grouped_matrix
+    })
+
+@csrf_exempt
+@login_required
+def api_save_rco(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    try:
+        data = json.loads(request.body)
+        ro_id = data.get('ro_id')
+        bulan = int(data.get('bulan'))
+        konten = data.get('konten', '').strip()
+        
+        ro = MasterRO.objects.get(id=ro_id)
+        if konten:
+            r, _ = RealisasiRO.objects.update_or_create(master_ro=ro, bulan=bulan, defaults={'konten': konten})
+        else:
+            RealisasiRO.objects.filter(master_ro=ro, bulan=bulan).delete()
+            
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+# ============================================================
+# AUDIT KONSISTENSI (Admin Review)
+# ============================================================
+@csrf_exempt
+@login_required
+@role_required(['ADMIN'])
+def api_audit_konsistensi(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+        
+    try:
+        data = json.loads(request.body)
+        entry_id = data.get('entry_id')
+        
+        entry = FRAEntry.objects.select_related('iku', 'iku__periode').get(id=entry_id)
+        periode = entry.iku.periode
+        
+        if not entry.link_bukti_kinerja:
+            return JsonResponse({'error': 'Belum ada link folder GDrive untuk Bukti Kinerja.'}, status=400)
+            
+        tw = periode.triwulan
+        tw_months = [(tw - 1) * 3 + 1, (tw - 1) * 3 + 2, (tw - 1) * 3 + 3]
+        
+        expected_files = []
+        try:
+            tahun_kerja = TahunKerja.objects.get(tahun=periode.tahun)
+            all_ros = MasterRO.objects.filter(tahun=tahun_kerja)
+            ros = [r for r in all_ros if entry.iku.kode_indikator in [i.strip() for i in r.kode_iku.split(',') if i.strip()]]
+            for ro in ros:
+                realisasis = RealisasiRO.objects.filter(master_ro=ro, bulan__in=tw_months)
+                for r in realisasis:
+                    if r.konten:
+                        lines = r.konten.split('\n')
+                        for line in lines:
+                            line_clean = line.strip()
+                            if line_clean:
+                                expected_files.append({
+                                    'ro_kode': ro.kode_ro,
+                                    'ro_nama': ro.nama_ro,
+                                    'bulan': r.bulan,
+                                    'expected_name': line_clean
+                                })
+        except TahunKerja.DoesNotExist:
+            pass
+            
+        from .services.gdrive_service import fetch_folder_contents
+        try:
+            gdrive_files = fetch_folder_contents(entry.link_bukti_kinerja)
+            actual_names = []
+            for f in gdrive_files:
+                name = f.get('name', '')
+                name_no_ext = name.rsplit('.', 1)[0] if '.' in name else name
+                actual_names.append({'original': name, 'no_ext': name_no_ext})
+        except Exception as e:
+            return JsonResponse({'error': f'Gagal mengambil data dari Google Drive: {str(e)}'}, status=400)
+            
+        results = []
+        for expected in expected_files:
+            expected_name = expected['expected_name']
+            
+            match_found = False
+            matched_file = None
+            
+            for actual in actual_names:
+                # Case-insensitive matching
+                if expected_name.lower() == actual['original'].lower() or expected_name.lower() == actual['no_ext'].lower():
+                    match_found = True
+                    matched_file = actual['original']
+                    break
+                    
+            results.append({
+                'ro_kode': expected['ro_kode'],
+                'bulan': expected['bulan'],
+                'expected_name': expected_name,
+                'is_match': match_found,
+                'matched_file': matched_file
+            })
+            
+        return JsonResponse({
+            'status': 'success',
+            'results': results,
+            'gdrive_count': len(gdrive_files),
+            'expected_count': len(expected_files),
+        })
+        
+    except FRAEntry.DoesNotExist:
+        return JsonResponse({'error': 'Entry IKU tidak ditemukan.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)

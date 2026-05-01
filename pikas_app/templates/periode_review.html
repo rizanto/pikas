@@ -287,6 +287,11 @@
                             BUKTI KINERJA
                         </button>
                         
+                        <button onclick="openAuditModal('{{ entry.id }}')" class="viewer-btn" style="--btn-c:236,72,153;">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            AUDIT KONSISTENSI RCO
+                        </button>
+                        
                         <button onclick="openGDriveViewer('{{ entry.link_solusi|default_if_none:''|escapejs }}','Eviden Solusi')" class="viewer-btn" style="--btn-c:34,197,94;">
                             <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                             BUKTI SOLUSI
@@ -314,11 +319,163 @@
 
 {% include 'gdrive_viewer.html' %}
 
+<!-- Audit Konsistensi Modal -->
+<div id="auditModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(5,8,22,0.8);backdrop-filter:blur(10px);align-items:center;justify-content:center;">
+    <div class="glass-card" style="width:90%; max-width:800px; max-height:85vh; display:flex; flex-direction:column; background:rgba(15,20,40,0.95);">
+        <div style="padding:16px 20px; border-bottom:1px solid rgba(148,163,184,0.1); display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02);">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg, #ec4899, #a855f7); display:flex; align-items:center; justify-content:center;">
+                    <svg width="20" height="20" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <div>
+                    <h3 style="color:white; font-size:16px; font-weight:800; margin:0;">Audit Konsistensi RCO</h3>
+                    <p style="color:#94a3b8; font-size:11px; font-weight:600; margin:2px 0 0 0;">Mencocokkan baris isian kegiatan dengan nama file di Google Drive</p>
+                </div>
+            </div>
+            <button onclick="closeAuditModal()" style="background:none; border:none; color:#94a3b8; cursor:pointer; padding:4px;">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        
+        <div id="auditModalBody" style="flex:1; overflow-y:auto; padding:20px; background:rgba(0,0,0,0.2);">
+            <div id="auditLoading" style="display:none; text-align:center; padding:40px;">
+                <div class="spinner" style="margin:0 auto 16px;"></div>
+                <p style="color:#94a3b8; font-size:13px; font-weight:600;">Memeriksa konsistensi, mohon tunggu...</p>
+            </div>
+            <div id="auditResults" style="display:none; flex-direction:column; gap:16px;"></div>
+        </div>
+        
+        <div style="padding:16px 20px; border-top:1px solid rgba(148,163,184,0.1); text-align:right; background:rgba(255,255,255,0.01);">
+            <button onclick="closeAuditModal()" style="padding:8px 16px; background:rgba(71,85,105,0.3); border:1px solid rgba(71,85,105,0.3); border-radius:8px; color:white; font-weight:700; font-size:12px; cursor:pointer;">Tutup</button>
+        </div>
+    </div>
+</div>
 
+<style>
+    .spinner {
+        width: 32px;
+        height: 32px;
+        border: 4px solid rgba(168,85,247,0.2);
+        border-top-color: #a855f7;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+</style>
 <script>
     const details = document.querySelectorAll('.iku-detail');
     const tabs = document.querySelectorAll('.iku-tab');
     const emptyState = document.getElementById('empty-state');
+
+    // Pindahkan modal audit ke body agar overlay menutupi semua
+    document.addEventListener('DOMContentLoaded', () => {
+        const auditModal = document.getElementById('auditModal');
+        if (auditModal && auditModal.parentElement !== document.body) {
+            document.body.appendChild(auditModal);
+        }
+    });
+
+    function openAuditModal(entryId) {
+        document.getElementById('auditModal').style.display = 'flex';
+        document.getElementById('auditLoading').style.display = 'block';
+        document.getElementById('auditResults').style.display = 'none';
+        document.getElementById('auditResults').innerHTML = '';
+
+        fetch('/api/audit-konsistensi/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ entry_id: entryId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('auditLoading').style.display = 'none';
+            if (data.status === 'success') {
+                renderAuditResults(data);
+            } else {
+                document.getElementById('auditResults').style.display = 'flex';
+                document.getElementById('auditResults').innerHTML = `
+                    <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); padding:16px; border-radius:8px;">
+                        <p style="color:#fca5a5; font-size:13px; font-weight:700; margin:0;">Gagal Melakukan Audit</p>
+                        <p style="color:#cbd5e1; font-size:12px; margin-top:4px;">${data.error}</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            document.getElementById('auditLoading').style.display = 'none';
+            document.getElementById('auditResults').style.display = 'flex';
+            document.getElementById('auditResults').innerHTML = `<p style="color:#ef4444; text-align:center;">Error: ${error}</p>`;
+        });
+    }
+
+    function closeAuditModal() {
+        document.getElementById('auditModal').style.display = 'none';
+    }
+
+    function renderAuditResults(data) {
+        const container = document.getElementById('auditResults');
+        container.style.display = 'flex';
+        
+        const matchesCount = data.results.filter(r => r.is_match).length;
+        const totalExpected = data.expected_count;
+        const percent = totalExpected > 0 ? Math.round((matchesCount / totalExpected) * 100) : 100;
+        
+        let statusColor = percent === 100 ? '#10b981' : (percent >= 70 ? '#f59e0b' : '#ef4444');
+        
+        let html = `
+            <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:16px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <h4 style="color:white; font-size:14px; margin:0 0 4px 0;">Ringkasan Pemeriksaan</h4>
+                    <p style="color:#94a3b8; font-size:12px; margin:0;">${totalExpected} kegiatan di RCO vs ${data.gdrive_count} file di GDrive</p>
+                </div>
+                <div style="text-align:right;">
+                    <span style="font-size:24px; font-weight:900; color:${statusColor};">${percent}%</span>
+                    <span style="font-size:12px; font-weight:700; color:#cbd5e1; display:block;">Match (${matchesCount}/${totalExpected})</span>
+                </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+        `;
+        
+        if (data.results.length === 0) {
+            html += `<p style="text-align:center; color:#64748b; padding:20px; font-size:13px;">Tidak ada data kegiatan di RCO untuk triwulan ini.</p>`;
+        } else {
+            const grouped = {};
+            data.results.forEach(item => {
+                if (!grouped[item.bulan]) grouped[item.bulan] = [];
+                grouped[item.bulan].push(item);
+            });
+            
+            for (const bulan in grouped) {
+                html += `
+                    <div style="margin-top:8px;">
+                        <span style="font-size:11px; font-weight:800; color:#a855f7; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; display:block;">Bulan ${bulan}</span>
+                `;
+                
+                grouped[bulan].forEach(item => {
+                    const icon = item.is_match 
+                        ? `<svg width="16" height="16" fill="none" stroke="#10b981" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>`
+                        : `<svg width="16" height="16" fill="none" stroke="#ef4444" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>`;
+                    
+                    html += `
+                        <div style="background:rgba(0,0,0,0.3); border:1px solid ${item.is_match ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}; border-radius:8px; padding:12px; margin-bottom:8px; display:flex; align-items:flex-start; gap:12px;">
+                            <div style="margin-top:2px;">${icon}</div>
+                            <div style="flex:1;">
+                                <div style="font-size:10px; color:#94a3b8; font-weight:700; margin-bottom:2px;">[RO: ${item.ro_kode}]</div>
+                                <div style="font-size:13px; font-weight:600; color:#f1f5f9;">${item.expected_name}</div>
+                                ${item.is_match 
+                                    ? `<div style="font-size:11px; color:#10b981; margin-top:4px;">Cocok dengan: ${item.matched_file}</div>`
+                                    : `<div style="font-size:11px; color:#ef4444; margin-top:4px;">Tidak ditemukan file dengan nama ini di Google Drive.</div>`
+                                }
+                            </div>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+        }
+        html += `</div>`;
+        container.innerHTML = html;
+    }
 
     // Sembunyikan semua detail di awal
     details.forEach(d => d.style.display = 'none');

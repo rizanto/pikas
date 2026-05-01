@@ -1,0 +1,224 @@
+{% extends 'crm_base.html' %}
+{% block title %}Rincian Output — PIKAS{% endblock %}
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.38.0/min/vs/loader.min.js"></script>
+{% endblock %}
+{% block breadcrumbs %}
+<span class="breadcrumb-item">Manajemen Rincian Output (RCO)</span>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:24px; display:flex; justify-content:space-between; align-items:flex-end;">
+    <div>
+        <h1 style="font-size:26px;font-weight:900;color:white;">Master Rincian Output</h1>
+        <p style="color:#94a3b8;font-size:14px;font-weight:600;margin-top:4px;">Kelola daftar RO tahunan via JSON Editor atau Tabel.</p>
+    </div>
+    
+    <div style="display:flex; gap:12px; align-items:center;">
+        <form method="GET" style="display:flex; align-items:center; gap:8px;">
+            <label style="font-size:12px; font-weight:800; color:#94a3b8; text-transform:uppercase;">Tahun Kerja:</label>
+            <select name="tahun_id" class="pikas-input" style="width:auto; min-width:120px; font-size:13px; padding:8px 12px;" onchange="this.form.submit()">
+                {% for t in tahuns %}
+                <option value="{{ t.id }}" {% if selected_tahun and t.id == selected_tahun.id %}selected{% endif %}>{{ t.tahun }} {% if t.is_active %}(Aktif){% endif %}</option>
+                {% endfor %}
+            </select>
+        </form>
+        <button type="button" onclick="openAddTahunModal()" class="pikas-btn-primary" style="padding:8px 12px; font-size:12px;">+ Tahun</button>
+        {% if selected_tahun %}
+            {% if not selected_tahun.is_active %}
+            <button type="button" onclick="setActiveTahun('{{ selected_tahun.id }}')" class="pikas-btn-primary" style="padding:8px 12px; font-size:12px; background:linear-gradient(135deg, #10b981, #34d399);">Set Aktif</button>
+            {% endif %}
+            <button type="button" onclick="deleteTahun('{{ selected_tahun.id }}', '{{ selected_tahun.tahun }}')" style="padding:8px 12px; font-size:12px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:#ef4444; border-radius:8px; cursor:pointer; font-weight:700; transition:all 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.1)'" title="Hapus Tahun Kerja ini">🗑️ Hapus Tahun</button>
+        {% endif %}
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1.2fr;gap:20px;height:calc(100vh - 200px);" id="roApp">
+
+    <!-- LEFT: MONACO JSON EDITOR -->
+    <div class="glass-card" style="overflow:hidden;display:flex;flex-direction:column;">
+        <div style="padding:14px 20px;border-bottom:1px solid rgba(148,163,184,0.06);display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="font-size:14px;font-weight:800;color:white;display:flex;align-items:center;gap:8px;">
+                <svg width="16" height="16" fill="none" stroke="#a855f7" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                JSON Editor ({{ selected_tahun.tahun|default:"-" }})
+            </h3>
+            {% if selected_tahun %}
+            <button onclick="submitBulkJson()" class="pikas-btn-primary" style="padding:7px 18px;font-size:11px; background:linear-gradient(135deg, #a855f7, #c084fc);">💾 Sync RO</button>
+            {% endif %}
+        </div>
+        <div id="monaco-editor" style="flex:1;width:100%; min-height:400px;"></div>
+        <input type="hidden" id="f_tahun_id" value="{{ selected_tahun.id }}">
+    </div>
+
+    <!-- RO List Card -->
+    <div class="glass-card" style="overflow:hidden;display:flex;flex-direction:column;">
+        <div style="padding:16px 20px;border-bottom:1px solid rgba(148,163,184,0.06);display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="font-size:15px;font-weight:800;color:white;">Daftar RO Tahun {{ selected_tahun.tahun|default:"-" }}</h3>
+            <div style="position:relative;">
+                <input type="text" id="searchInput" class="pikas-input" style="padding-left:32px;width:220px;font-size:12px;" placeholder="Cari kode atau nama..." oninput="filterRos()">
+                <svg width="14" height="14" fill="none" stroke="#475569" viewBox="0 0 24 24" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+        </div>
+        <div style="overflow-y:auto;flex:1;">
+            <table style="width:100%;border-collapse:collapse;">
+                <thead>
+                    <tr style="border-bottom:1px solid rgba(148,163,184,0.06);">
+                        <th style="padding:10px 20px;text-align:left;font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px; width:80px;">IKU</th>
+                        <th style="padding:10px 20px;text-align:left;font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;">Rincian Output & Kegiatan</th>
+                        <th style="padding:10px 20px;text-align:right;font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px; width:80px;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="roTableBody">
+                    {% if grouped_ros %}
+                        {% for iku_kode, ros_list in grouped_ros.items %}
+                        <!-- Group Header -->
+                        <tr class="ro-group-header">
+                            <td colspan="3" style="padding:12px 20px; background:rgba(255,255,255,0.03); border-bottom:1px solid rgba(148,163,184,0.06);">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span style="font-size:13px;font-weight:900;color:#a855f7;">IKU: {{ iku_kode }}</span>
+                                    <span style="font-size:11px;font-weight:700;color:#64748b;background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:4px;">{{ ros_list|length }} RO</span>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        {% for ro in ros_list %}
+                        <tr class="ro-row" data-search="{{ iku_kode|lower }} {{ ro.kode_ro|lower }} {{ ro.nama_ro|lower }}" style="border-bottom:1px solid rgba(148,163,184,0.03);transition:background 0.15s;" onmouseover="this.style.background='rgba(148,163,184,0.03)'" onmouseout="this.style.background='transparent'">
+                            <td style="padding:12px 20px; vertical-align:top;">
+                                <div style="width:2px; height:100%; background:rgba(168,85,247,0.3); margin-left:10px;"></div>
+                            </td>
+                            <td style="padding:12px 20px; vertical-align:top;">
+                                <div style="display:flex; gap:8px; margin-bottom:4px; align-items:center;">
+                                    <div style="font-size:12px;font-weight:800;color:#6ee7b7; background:rgba(110,231,183,0.1); padding:2px 6px; border-radius:4px;">{{ ro.kode_ro }}</div>
+                                    {% if ',' in ro.kode_iku %}
+                                    <span title="RO ini digunakan di beberapa IKU: {{ ro.kode_iku }}" style="font-size:10px; font-weight:800; color:#fbbf24; border:1px solid #fbbf24; border-radius:4px; padding:1px 4px; cursor:help;">Multi-IKU</span>
+                                    {% endif %}
+                                </div>
+                                <div style="font-size:13px;font-weight:700;color:white; margin-bottom:8px;">{{ ro.nama_ro }}</div>
+                                {% if ro.daftar_kegiatan %}
+                                <div style="background:rgba(15,23,42,0.5); padding:8px 12px; border-radius:6px; border:1px solid rgba(148,163,184,0.1);">
+                                    <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:4px;">Daftar Kegiatan:</div>
+                                    <pre style="font-size:10px; color:#cbd5e1; margin:0; font-family:inherit; white-space:pre-wrap;">{{ ro.daftar_kegiatan }}</pre>
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td style="padding:12px 20px;text-align:right; vertical-align:top;">
+                                <div style="display:flex; justify-content:flex-end; gap:4px;">
+                                    <button onclick="deleteRo('{{ ro.id }}', '{{ ro.kode_ro|escapejs }}')" style="background:none;border:none;color:#f87171;cursor:pointer;padding:4px;" title="Hapus">
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="3" style="padding:40px;text-align:center;color:#64748b;font-size:12px;">Belum ada Rincian Output untuk tahun ini.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    let editor = null;
+    const BULK_API = '{% url "api_bulk_ro" %}';
+    const API = '{% url "api_manage_ro" %}';
+
+    /* Init Monaco */
+    document.addEventListener('DOMContentLoaded', function() {
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.38.0/min/vs' }});
+        require(['vs/editor/editor.main'], function() {
+            const initialValue = {{ ros_json_str|safe }};
+            editor = monaco.editor.create(document.getElementById('monaco-editor'), {
+                value: JSON.stringify(initialValue, null, 4),
+                language: 'json',
+                theme: 'vs-dark',
+                automaticLayout: true,
+                minimap: { enabled: false },
+                fontSize: 13,
+                scrollBeyondLastLine: false,
+                padding: { top: 12, bottom: 12 },
+                wordWrap: 'on',
+                tabSize: 4
+            });
+        });
+    });
+
+    function filterRos() {
+        const q = document.getElementById('searchInput').value.toLowerCase();
+        document.querySelectorAll('.ro-row').forEach(r => {
+            const isMatch = r.dataset.search.includes(q);
+            r.style.display = isMatch ? '' : 'none';
+        });
+    }
+
+    async function apiCall(payload) {
+        try {
+            const r = await fetch(API, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+            const d = await r.json();
+            if (!r.ok) throw new Error(d.error || 'Error');
+            showToast('success','Berhasil','Data berhasil disimpan.');
+            setTimeout(() => location.reload(), 800);
+        } catch(e) { showToast('error','Gagal',e.message); }
+    }
+
+    async function deleteRo(id, kode) {
+        const ok = await pikasConfirm('Hapus RO', 'Hapus RO ['+kode+']? Data realisasi bulanan juga akan terhapus.', 'Hapus', 'linear-gradient(135deg,#dc2626,#ef4444)');
+        if (ok) apiCall({ action:'delete_ro', id:id });
+    }
+
+    async function openAddTahunModal() {
+        const currentYear = new Date().getFullYear();
+        const year = await pikasPrompt("Tambah Tahun Kerja", "Masukkan tahun baru untuk pengelolaan RCO:", currentYear, currentYear);
+        if (year && !isNaN(year)) {
+            apiCall({ action: 'add_tahun', tahun: year });
+        }
+    }
+
+    function setActiveTahun(id) {
+        apiCall({ action: 'set_active_tahun', tahun_id: id });
+    }
+
+    async function deleteTahun(id, year) {
+        const ok = await pikasConfirm('Hapus Tahun Kerja', `Yakin ingin menghapus seluruh data RO dan Tahun Kerja ${year}? Tindakan ini tidak bisa dibatalkan.`, 'Hapus Permanen', 'linear-gradient(135deg,#dc2626,#ef4444)');
+        if (ok) apiCall({ action: 'delete_tahun', tahun_id: id });
+    }
+
+    async function submitBulkJson() {
+        if (!editor) return;
+        const jsonStr = editor.getValue().trim();
+        if (!jsonStr) {
+            showToast('error', 'Gagal', 'JSON tidak boleh kosong.');
+            return;
+        }
+        
+        try { JSON.parse(jsonStr); } catch (e) {
+            showToast('error', 'JSON Invalid', 'Format JSON tidak valid.');
+            return;
+        }
+
+        showLoader('Sinkronisasi data RO...');
+        try {
+            const r = await fetch(BULK_API, { 
+                method:'POST', 
+                headers:{'Content-Type':'application/json'}, 
+                body:JSON.stringify({
+                    tahun_id: document.getElementById('f_tahun_id').value,
+                    json_data: jsonStr
+                }) 
+            });
+            const d = await r.json();
+            hideLoader();
+            if (!r.ok) throw new Error(d.error || 'Error saat sinkronisasi');
+            showToast('success', 'Sync Berhasil', `Ditambah: ${d.added}, Diupdate: ${d.updated}, Dihapus: ${d.deleted}`);
+            setTimeout(() => location.reload(), 1500);
+        } catch(e) { 
+            hideLoader();
+            showToast('error', 'Gagal', e.message); 
+        }
+    }
+</script>
+{% endblock %}

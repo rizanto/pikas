@@ -28,4 +28,12 @@ urlpatterns = [
 
     # Drive Explorer
     path('api/drive-explorer/', views.drive_explorer_api, name='api_drive_explorer'),
+
+    # Realisasi Capaian Output (RCO)
+    path('rincian-output/', views.manage_ro_view, name='manage_ro'),
+    path('api/rincian-output/', views.api_manage_ro, name='api_manage_ro'),
+    path('api/bulk-ro/', views.api_bulk_ro, name='api_bulk_ro'),
+    path('capaian-output/', views.capaian_output_view, name='capaian_output'),
+    path('api/capaian-output/', views.api_save_rco, name='api_save_rco'),
+    path('api/audit-konsistensi/', views.api_audit_konsistensi, name='api_audit_konsistensi'),
 ]

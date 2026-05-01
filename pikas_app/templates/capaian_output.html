@@ -1,0 +1,199 @@
+{% extends 'crm_base.html' %}
+{% block title %}Capaian Output — PIKAS{% endblock %}
+{% block breadcrumbs %}
+<span class="breadcrumb-item">Capaian Output (Bulanan)</span>
+{% endblock %}
+
+{% block content %}
+<style>
+    .rco-table { width:100%; border-collapse:collapse; background:rgba(15,20,40,0.5); border-radius:12px; overflow:hidden; }
+    .rco-th { padding:12px 10px; background:rgba(15,20,40,0.9); backdrop-filter:blur(10px); color:#94a3b8; font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:1px; border-bottom:1px solid rgba(255,255,255,0.06); border-right:1px solid rgba(255,255,255,0.03); text-align:center; position:sticky; top:0; z-index:10; }
+    .rco-td { padding:0; border-bottom:1px solid rgba(255,255,255,0.03); border-right:1px solid rgba(255,255,255,0.03); vertical-align:top; position:relative; min-width:140px; }
+    .rco-td-ro { padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.03); border-right:1px solid rgba(255,255,255,0.03); vertical-align:top; min-width:260px; background:rgba(255,255,255,0.01); }
+    .rco-iku-header { background:rgba(168,85,247,0.1); padding:10px 16px; font-size:12px; font-weight:800; color:#c084fc; border-bottom:1px solid rgba(168,85,247,0.2); }
+    
+    .rco-cell-content { padding:8px 10px; min-height:60px; font-size:11px; color:#e2e8f0; white-space:pre-wrap; cursor:pointer; transition:background 0.2s; font-family:monospace; line-height:1.4; }
+    .rco-cell-content:hover { background:rgba(255,255,255,0.04); }
+    .rco-cell-content.empty { color:#475569; font-style:italic; }
+    
+    .rco-edit-overlay { display:none; position:absolute; inset:0; z-index:20; background:rgba(15,23,42,0.95); padding:6px; flex-direction:column; gap:6px; box-shadow:0 8px 24px rgba(0,0,0,0.5); border:1px solid rgba(168,85,247,0.4); border-radius:6px; }
+    .rco-edit-textarea { flex:1; width:100%; background:rgba(0,0,0,0.3); border:1px solid rgba(148,163,184,0.2); border-radius:4px; color:white; font-size:11px; padding:6px; font-family:monospace; resize:none; outline:none; }
+    .rco-edit-textarea:focus { border-color:#a855f7; }
+    .rco-edit-actions { display:flex; justify-content:flex-end; gap:4px; }
+    
+    .ro-tooltip-wrapper { position:relative; display:inline-flex; align-items:center; margin-left:6px; vertical-align:middle; }
+    .ro-tooltip { visibility:hidden; width:280px; background:rgba(15,23,42,0.98); color:#fff; text-align:left; border-radius:10px; padding:12px; position:absolute; z-index:100; bottom:135%; left:0; opacity:0; transition:all 0.3s; border:1px solid rgba(168,85,247,0.4); box-shadow:0 20px 25px -5px rgba(0,0,0,0.5); pointer-events:none; }
+    .ro-tooltip::after { content:""; position:absolute; top:100%; left:12px; border-width:6px; border-style:solid; border-color:rgba(168,85,247,0.4) transparent transparent transparent; }
+    .ro-tooltip-wrapper:hover .ro-tooltip { visibility:visible; opacity:1; bottom:125%; }
+    .info-icon { width:16px; height:16px; border-radius:50%; background:rgba(168,85,247,0.15); border:1px solid rgba(168,85,247,0.3); color:#c084fc; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:900; font-family:serif; font-style:italic; cursor:help; }
+</style>
+
+<div style="margin-bottom:24px; display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px;">
+    <div>
+        <h1 style="font-size:26px;font-weight:900;color:white;">Realisasi Capaian Output (RCO)</h1>
+        <p style="color:#94a3b8;font-size:14px;font-weight:600;margin-top:4px;">Catat dokumen progres kinerja bulanan untuk keperluan unggah GDrive.</p>
+    </div>
+    
+    <form method="GET" style="display:flex; align-items:center; gap:8px;">
+        <label style="font-size:12px; font-weight:800; color:#94a3b8; text-transform:uppercase;">Tahun Kerja:</label>
+        <select name="tahun_id" class="pikas-input" style="width:auto; min-width:120px; font-size:13px; padding:8px 12px;" onchange="this.form.submit()">
+            {% for t in tahuns %}
+            <option value="{{ t.id }}" {% if selected_tahun and t.id == selected_tahun.id %}selected{% endif %}>{{ t.tahun }}</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+<div class="glass-card" style="padding:0; overflow:hidden; flex:1; display:flex; flex-direction:column; min-height:600px;">
+    {% if not selected_tahun %}
+    <div style="padding:48px;text-align:center;">
+        <p style="font-size:14px;font-weight:700;color:#94a3b8;">Belum ada Tahun Kerja yang aktif.</p>
+    </div>
+    {% elif not grouped_matrix %}
+    <div style="padding:48px;text-align:center;">
+        <p style="font-size:14px;font-weight:700;color:#94a3b8;">Tidak ada IKU/RO yang ditugaskan kepada tim Anda untuk tahun ini.</p>
+    </div>
+    {% else %}
+    <div style="flex:1; overflow:auto;">
+        <table class="rco-table">
+            <thead>
+                <tr>
+                    <th class="rco-th" style="text-align:left; min-width:260px; z-index:11; position:sticky; left:0; background:rgba(15,20,40,0.95);">Rincian Output (RO)</th>
+                    {% for m in months %}
+                    <th class="rco-th">Bulan {{ m }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for iku_code, ros_data in grouped_matrix.items %}
+                <!-- IKU Header Row -->
+                <tr>
+                    <td colspan="13" class="rco-iku-header" style="position:sticky; left:0;">
+                        IKU: {{ iku_code }}
+                    </td>
+                </tr>
+                <!-- RO Rows -->
+                {% for data in ros_data %}
+                <tr>
+                    <td class="rco-td-ro" style="position:sticky; left:0; background:rgba(15,20,40,0.95); z-index:5; box-shadow: 2px 0 5px rgba(0,0,0,0.1);">
+                        <div style="font-size:10px; font-weight:800; color:#6ee7b7; margin-bottom:4px;">[{{ data.ro.kode_ro }}]</div>
+                        <div style="font-size:12px; font-weight:700; color:#f1f5f9; line-height:1.4;">
+                            {{ data.ro.nama_ro }}
+                            {% if data.ro.daftar_kegiatan %}
+                            <div class="ro-tooltip-wrapper">
+                                <div class="info-icon">i</div>
+                                <div class="ro-tooltip">
+                                    <div style="font-size:10px; font-weight:900; color:#c084fc; text-transform:uppercase; margin-bottom:6px; letter-spacing:0.5px;">Daftar Kegiatan</div>
+                                    <pre style="font-size:11px; color:#cbd5e1; margin:0; font-family:inherit; white-space:pre-wrap; line-height:1.5;">{{ data.ro.daftar_kegiatan }}</pre>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </td>
+                    
+                    {% for m, konten in data.bulans.items %}
+                    <td class="rco-td">
+                        <div class="rco-cell-content {% if not konten %}empty{% endif %}" onclick="openEditor('{{ data.ro.id }}', {{ m }})" id="display-{{ data.ro.id }}-{{ m }}">
+                            {% if konten %}{{ konten }}{% else %}+ Tambah{% endif %}
+                        </div>
+                        
+                        <div class="rco-edit-overlay" id="editor-{{ data.ro.id }}-{{ m }}">
+                            <textarea class="rco-edit-textarea" id="input-{{ data.ro.id }}-{{ m }}" placeholder="1. Dokumen A&#10;2. Dokumen B"></textarea>
+                            <div class="rco-edit-actions">
+                                <button onclick="closeEditor('{{ data.ro.id }}', {{ m }})" style="padding:4px 8px; font-size:10px; font-weight:700; background:rgba(71,85,105,0.3); border:none; border-radius:4px; color:#94a3b8; cursor:pointer;">Batal</button>
+                                <button onclick="saveCell('{{ data.ro.id }}', {{ m }})" style="padding:4px 8px; font-size:10px; font-weight:700; background:#a855f7; border:none; border-radius:4px; color:white; cursor:pointer;">Simpan</button>
+                            </div>
+                        </div>
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    const API_SAVE_RCO = '{% url "api_save_rco" %}';
+    
+    // Store original values to check if changed
+    const cellValues = {};
+
+    function openEditor(roId, bulan) {
+        const displayEl = document.getElementById(`display-${roId}-${bulan}`);
+        const editorEl = document.getElementById(`editor-${roId}-${bulan}`);
+        const inputEl = document.getElementById(`input-${roId}-${bulan}`);
+        
+        // Hide all other open editors first
+        document.querySelectorAll('.rco-edit-overlay').forEach(el => el.style.display = 'none');
+        
+        let val = displayEl.innerText;
+        if (displayEl.classList.contains('empty')) {
+            val = '';
+        }
+        
+        inputEl.value = val;
+        cellValues[`${roId}-${bulan}`] = val; // save original
+        
+        editorEl.style.display = 'flex';
+        inputEl.focus();
+    }
+
+    function closeEditor(roId, bulan) {
+        const editorEl = document.getElementById(`editor-${roId}-${bulan}`);
+        editorEl.style.display = 'none';
+    }
+
+    async function saveCell(roId, bulan) {
+        const displayEl = document.getElementById(`display-${roId}-${bulan}`);
+        const editorEl = document.getElementById(`editor-${roId}-${bulan}`);
+        const inputEl = document.getElementById(`input-${roId}-${bulan}`);
+        
+        const newValue = inputEl.value.trim();
+        const origValue = cellValues[`${roId}-${bulan}`];
+        
+        // If no change, just close
+        if (newValue === origValue) {
+            closeEditor(roId, bulan);
+            return;
+        }
+        
+        // Show saving state (optional, can be a tiny spinner in the cell)
+        inputEl.disabled = true;
+        
+        try {
+            const res = await fetch(API_SAVE_RCO, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ro_id: roId,
+                    bulan: bulan,
+                    konten: newValue
+                })
+            });
+            
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Gagal menyimpan');
+            
+            // Update UI
+            if (newValue) {
+                displayEl.innerText = newValue;
+                displayEl.classList.remove('empty');
+            } else {
+                displayEl.innerText = '+ Tambah';
+                displayEl.classList.add('empty');
+            }
+            
+            closeEditor(roId, bulan);
+            showToast('success', 'Tersimpan', `Bulan ${bulan} berhasil diupdate.`);
+            
+        } catch (err) {
+            showToast('error', 'Gagal', err.message);
+        } finally {
+            inputEl.disabled = false;
+        }
+    }
+</script>
+{% endblock %}

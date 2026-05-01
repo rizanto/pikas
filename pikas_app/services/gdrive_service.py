@@ -49,19 +49,34 @@ def fetch_folder_contents(url: str) -> list:
         return cached_data
 
     service = get_drive_service()
-    query = f"'{folder_id}' in parents and trashed = false"
     
+    def get_all_files(pid):
+        all_items = []
+        query = f"'{pid}' in parents and trashed = false"
+        page_token = None
+        while True:
+            response = service.files().list(
+                q=query,
+                fields="nextPageToken, files(id, name, mimeType, modifiedTime, size)",
+                pageSize=1000,
+                supportsAllDrives=True,
+                includeItemsFromAllDrives=True,
+                pageToken=page_token
+            ).execute()
+            
+            for f in response.get('files', []):
+                if f['mimeType'] == 'application/vnd.google-apps.folder':
+                    all_items.extend(get_all_files(f['id']))
+                else:
+                    all_items.append(f)
+            
+            page_token = response.get('nextPageToken')
+            if not page_token:
+                break
+        return all_items
+
     try:
-        results = service.files().list(
-            q=query,
-            fields="files(id, name, mimeType, modifiedTime, size)",
-            pageSize=100,
-            supportsAllDrives=True,
-            includeItemsFromAllDrives=True
-        ).execute()
-        
-        items = results.get('files', [])
-        
+        items = get_all_files(folder_id)
         # Cache the result for 5 minutes (300 seconds)
         cache.set(cache_key, items, 300)
         return items

@@ -1,0 +1,122 @@
+[
+    {
+        "kode_iku": "1.1.1.1",
+        "kode_ro": "2905 BMA 004",
+        "nama_ro": "Publikasi/Laporan Survei Angkatan Kerja Nasional",
+        "kegiatan": "1. SAKERNAS\n2. SUSENAS"
+    },
+    {
+        "kode_iku": "1.1.3.1",
+        "kode_ro": "2906 BMA 005",
+        "nama_ro": "Publikasi/Laporan Data Tunggal Sosial dan Ekonomi Nasional",
+        "kegiatan": "1. Kegiatan XYW"
+    },
+    {
+        "kode_iku": "1.1.3.1",
+        "kode_ro": "2906 BMA 006",
+        "nama_ro": "Publikasi/Laporan Survei Sosial Ekonomi Nasional",
+        "kegiatan": "1. kegiatan apa\n2. podes"
+    },
+    {
+        "kode_iku": "1.1.5.1",
+        "kode_ro": "2907 BMA 006",
+        "nama_ro": "Publikasi/Laporan Statistik Ketahanan Sosial",
+        "kegiatan": "1. Kegiatan Nganu"
+    },
+    {
+        "kode_iku": "1.1.5.1",
+        "kode_ro": "2907 BMA 008",
+        "nama_ro": "Publikasi/Laporan Pendataan Potensi Desa",
+        "kegiatan": "1. Kegiatan Nganu"
+    },
+    {
+        "kode_iku": "1.2.1.1",
+        "kode_ro": "2910 BMA 007",
+        "nama_ro": "Publikasi/Laporan Statistik Tanaman Pangan",
+        "kegiatan": "1. Kegiatan Nganu"
+    },
+    {
+        "kode_iku": "1.2.1.1",
+        "kode_ro": "2910 BMA 008",
+        "nama_ro": "Publikasi/Laporan Statistik Hortikultura dan Perkebunan",
+        "kegiatan": "1. Kegiatan Nganu"
+    },
+    {
+        "kode_iku": "1.2.1.1",
+        "kode_ro": "2909 BMA 005",
+        "nama_ro": "Publikasi/Laporan Statistik Peternakan, Perikanan, dan Kehutanan",
+        "kegiatan": "1. Kegiatan Nganu"
+    },
+    {
+        "kode_iku": "1.2.2.1, 1.2.3.1",
+        "kode_ro": "2904 BMA 006",
+        "nama_ro": "Publikasi/Laporan Statistik Industri, Pertambangan dan Penggalian, Energi, dan Konstruksi",
+        "kegiatan": "1. Kegiatan Nganu"
+    },
+    {
+        "kode_iku": "1.3.1.1",
+        "kode_ro": "2902 BMA 004",
+        "nama_ro": "Publikasi/Laporan Statistik Distribusi",
+        "kegiatan": "1. Kegiatan Nganu"
+    },
+    {
+        "kode_iku": "1.3.1.1",
+        "kode_ro": "2902 BMA 006",
+        "nama_ro": "Publikasi/Laporan Sensus Ekonomi",
+        "kegiatan": "1. Kegiatan Nganu"
+    },
+    {
+        "kode_iku": "1.3.1.1",
+        "kode_ro": "2900 BMA 005",
+        "nama_ro": "Dokumen/Laporan Pengembangan Metodologi Kegiatan Statistik",
+        "kegiatan": "1. Kegiatan Nganu"
+    },
+    {
+        "kode_iku": "1.3.3.1",
+        "kode_ro": "2903 BMA 009",
+        "nama_ro": "Publikasi/Laporan Statistik Harga",
+        "kegiatan": "1. Kegiatan Nganu"
+    },
+    {
+        "kode_iku": "1.3.5.1",
+        "kode_ro": "2908 BMA 004",
+        "nama_ro": "Publikasi/Laporan Statistik Keuangan, Teknologi Informasi, dan Pariwisata",
+        "kegiatan": "1. Kegiatan Nganu"
+    },
+    {
+        "kode_iku": "1.4.1.1, 1.4.1.2, 1.4.1.3",
+        "kode_ro": "2899 BMA 006",
+        "nama_ro": "Publikasi/Laporan Neraca Produksi",
+        "kegiatan": "1. Kegiatan Nganu"
+    },
+    {
+        "kode_iku": "1.4.1.1, 1.4.1.2, 1.4.1.3",
+        "kode_ro": "2898 BMA 007",
+        "nama_ro": "Publikasi/Laporan Statistik Neraca Pengeluaran",
+        "kegiatan": "1. Kegiatan Nganu"
+    },
+    {
+        "kode_iku": "1.4.1.1, 1.4.1.2, 1.4.1.3",
+        "kode_ro": "2896 BMA 004",
+        "nama_ro": "Publikasi/Laporan Analisis dan Pengembangan Statistik",
+        "kegiatan": "1. Kegiatan Nganu"
+    },
+    {
+        "kode_iku": "2.7.1.1",
+        "kode_ro": "2897 BMA 004",
+        "nama_ro": "Laporan Diseminasi dan Metadata Statistik",
+        "kegiatan": "1. Kegiatan Nganu"
+    },
+    {
+        "kode_iku": "2.7.1.1",
+        "kode_ro": "2901 CAN 004",
+        "nama_ro": "Pengembangan Infrastruktur dan Layanan Teknologi Informasi dan Komunikasi",
+        "kegiatan": "1. Kegiatan Nganu"
+    },
+    {
+        "kode_iku": "",
+        "kode_ro": "",
+        "nama_ro": "",
+        "kegiatan": "1. Kegiatan Nganu"
+    },
+]

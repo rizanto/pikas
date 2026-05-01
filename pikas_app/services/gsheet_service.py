@@ -89,32 +89,38 @@ def pull_periode_data(gsheet_id, periode, ignore_dirty=False, only_done=False):
 
     # Collect ALL ranges to fetch in batch
     ranges_to_fetch = []
+    # Quote sheet name if it contains spaces or special characters
+    safe_sheet_name = f"'{sheet_name}'" if " " in sheet_name or "!" in sheet_name else sheet_name
+
     for iku in ikus:
         cells = iku.cells or {}
         for key, coord in cells.items():
             if coord and isinstance(coord, str) and coord.strip():
-                rng = f"{sheet_name}!{coord.strip()}"
+                rng = f"{safe_sheet_name}!{coord.strip()}"
                 if rng not in ranges_to_fetch:
                     ranges_to_fetch.append(rng)
 
     if not ranges_to_fetch:
         return
 
-    try:
-        values_response = spreadsheet.values_batch_get(
-            ranges_to_fetch, 
-            params={'valueRenderOption': 'FORMATTED_VALUE'}
-        )
-    except Exception as e:
-        raise ValueError(f"Failed to batch_get from Google Sheets: {str(e)}")
-
-    valueRanges = values_response.get('valueRanges', [])
     fetched_data = {}
-    for i, rng_str in enumerate(ranges_to_fetch):
-        if i < len(valueRanges):
-            vals = valueRanges[i].get('values', [])
-            val = vals[0][0] if vals and vals[0] else None
-            fetched_data[rng_str] = val
+    # Chunking: Ambil per 100 range untuk menghindari URL too long (Error 400)
+    CHUNK_SIZE = 100
+    for i in range(0, len(ranges_to_fetch), CHUNK_SIZE):
+        chunk = ranges_to_fetch[i:i + CHUNK_SIZE]
+        try:
+            values_response = spreadsheet.values_batch_get(
+                chunk, 
+                params={'valueRenderOption': 'FORMATTED_VALUE'}
+            )
+            valueRanges = values_response.get('valueRanges', [])
+            for j, rng_str in enumerate(chunk):
+                if j < len(valueRanges):
+                    vals = valueRanges[j].get('values', [])
+                    val = vals[0][0] if vals and vals[0] else None
+                    fetched_data[rng_str] = val
+        except Exception as e:
+            raise ValueError(f"Failed to batch_get chunk {i//CHUNK_SIZE + 1}: {str(e)}")
 
     entries_to_update = []
     tw = periode.triwulan
@@ -127,7 +133,7 @@ def pull_periode_data(gsheet_id, periode, ignore_dirty=False, only_done=False):
             coord = cells.get(key, '')
             if not coord or not coord.strip():
                 return None
-            return fetched_data.get(f"{sheet_name}!{coord.strip()}")
+            return fetched_data.get(f"{safe_sheet_name}!{coord.strip()}")
 
         # Update metadata MasterIKU (Selalu diupdate jika ada perubahan di GSheet)
         meta_map = {
@@ -214,6 +220,7 @@ def push_periode_data(gsheet_id, periode):
 
     batch_data = []
     sheet_name = periode.sheet_name
+    safe_sheet_name = f"'{sheet_name}'" if " " in sheet_name or "!" in sheet_name else sheet_name
     tw = periode.triwulan
 
     for entry in entries:
@@ -243,7 +250,7 @@ def push_periode_data(gsheet_id, periode):
                 continue
             val = sanitize_for_gsheet(value) if isinstance(value, str) else (value or '')
             batch_data.append({
-                'range': f"{sheet_name}!{coord.strip()}",
+                'range': f"{safe_sheet_name}!{coord.strip()}",
                 'values': [[val]]
             })
 

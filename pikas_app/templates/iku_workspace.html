@@ -398,6 +398,10 @@
                                     <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                     BUKTI KINERJA
                                 </button>
+                                <button type="button" onclick="openRcoPeekModal('{{ entry.id }}')" class="viewer-btn" style="--btn-c:236,72,153; margin-left:8px;" title="Lihat referensi kegiatan dari Rincian Output">
+                                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                                    REF. RCO
+                                </button>
                             </div>
                             
                             <!-- Bukti Solusi -->
@@ -450,6 +454,62 @@
                         </div>
                     </div>
                 </form>
+
+                <!-- RCO Peek Modal (Per-Entry) -->
+                <div id="rcoPeekModal-{{ entry.id }}" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(5,8,22,0.8);backdrop-filter:blur(10px);align-items:center;justify-content:center;">
+                    <div class="glass-card" style="width:90%; max-width:800px; max-height:85vh; display:flex; flex-direction:column; background:rgba(15,20,40,0.95);">
+                        <div style="padding:16px 20px; border-bottom:1px solid rgba(148,163,184,0.1); display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02);">
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <div style="width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg, #ec4899, #a855f7); display:flex; align-items:center; justify-content:center;">
+                                    <svg width="20" height="20" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                                </div>
+                                <div>
+                                    <h3 style="color:white; font-size:16px; font-weight:800; margin:0;">Referensi Realisasi Capaian Output ({{ entry.iku.kode_indikator }})</h3>
+                                    <p style="color:#94a3b8; font-size:11px; font-weight:600; margin:2px 0 0 0;">Untuk TW {{ periode.triwulan }} (Bulan {% for m in tw_months %}{{ m }}{% if not forloop.last %}, {% endif %}{% endfor %})</p>
+                                </div>
+                            </div>
+                            <button type="button" onclick="closeRcoPeekModal('{{ entry.id }}')" style="background:none; border:none; color:#94a3b8; cursor:pointer; padding:4px;">
+                                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                        
+                        <div style="flex:1; overflow-y:auto; padding:20px; background:rgba(0,0,0,0.2);">
+                            {% if entry.rco_peek_data %}
+                            <div style="display:flex; flex-direction:column; gap:16px;">
+                                {% for rco in entry.rco_peek_data %}
+                                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:12px; overflow:hidden;">
+                                    <div style="padding:12px 16px; background:rgba(255,255,255,0.01); border-bottom:1px solid rgba(255,255,255,0.03);">
+                                        <span style="font-size:11px; font-weight:800; color:#6ee7b7;">[{{ rco.ro.kode_ro }}]</span>
+                                        <div style="font-size:13px; font-weight:700; color:#f1f5f9; margin-top:4px;">{{ rco.ro.nama_ro }}</div>
+                                    </div>
+                                    <div style="padding:16px; display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;">
+                                        {% for m, konten in rco.bulans.items %}
+                                        <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(148,163,184,0.1); border-radius:8px; padding:12px;">
+                                            <div style="font-size:10px; font-weight:800; color:#a855f7; text-transform:uppercase; margin-bottom:8px; letter-spacing:1px;">Bulan {{ m }}</div>
+                                            {% if konten %}
+                                            <pre style="margin:0; font-family:monospace; font-size:11px; color:#cbd5e1; white-space:pre-wrap; line-height:1.5;">{{ konten }}</pre>
+                                            {% else %}
+                                            <div style="font-size:11px; color:#475569; font-style:italic;">Belum ada catatan progres.</div>
+                                            {% endif %}
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div style="text-align:center; padding:40px;">
+                                <p style="color:#64748b; font-size:13px; font-weight:600;">Belum ada daftar RO untuk IKU ini di tahun {{ periode.tahun }}.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div style="padding:16px 20px; border-top:1px solid rgba(148,163,184,0.1); text-align:right; background:rgba(255,255,255,0.01);">
+                            <button type="button" onclick="closeRcoPeekModal('{{ entry.id }}')" style="padding:8px 16px; background:rgba(71,85,105,0.3); border:1px solid rgba(71,85,105,0.3); border-radius:8px; color:white; font-weight:700; font-size:12px; cursor:pointer;">Tutup Referensi</button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
             {% endfor %}
             
@@ -470,6 +530,21 @@
 {% include 'gdrive_viewer.html' %}
 
 <script>
+    function openRcoPeekModal(entryId) {
+        const modal = document.getElementById('rcoPeekModal-' + entryId);
+        if (modal) {
+            if (modal.parentElement !== document.body) {
+                document.body.appendChild(modal);
+            }
+            modal.style.display = 'flex';
+        }
+    }
+    function closeRcoPeekModal(entryId) {
+        const modal = document.getElementById('rcoPeekModal-' + entryId);
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
     const details = document.querySelectorAll('.iku-detail');
     const tabs = document.querySelectorAll('.iku-tab');
     const emptyState = document.getElementById('empty-state');

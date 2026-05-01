@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class CustomUser(AbstractUser):
@@ -261,3 +261,46 @@ class FRAEntry(models.Model):
 
     def __str__(self):
         return f"{self.iku.kode_indikator} — {self.iku.periode.label}"
+
+
+# ============================================================
+# REALISASI CAPAIAN OUTPUT (RCO)
+# ============================================================
+
+class TahunKerja(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tahun = models.IntegerField(unique=True, validators=[MinValueValidator(2020)])
+    is_active = models.BooleanField(default=False)
+
+    def __str__(self):
+        return str(self.tahun)
+
+class MasterRO(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tahun = models.ForeignKey(TahunKerja, on_delete=models.CASCADE, related_name='ros')
+    kode_iku = models.CharField(max_length=50, help_text="Kode IKU yang menaungi RO ini (misal: 1.1.3.1.)")
+    kode_ro = models.CharField(max_length=50, help_text="Kode RO (misal: 2906 BMA 005)")
+    nama_ro = models.TextField(help_text="Nama Rincian Output")
+    daftar_kegiatan = models.TextField(blank=True, default="", help_text="Daftar kegiatan (1 per baris) untuk tooltip panduan")
+
+    class Meta:
+        unique_together = ('tahun', 'kode_ro')
+
+    def __str__(self):
+        return f"{self.kode_ro} - {self.nama_ro}"
+
+class RealisasiRO(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    master_ro = models.ForeignKey(MasterRO, on_delete=models.CASCADE, related_name='realisasi')
+    bulan = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(12)])
+    konten = models.TextField(blank=True, default="")
+    
+    # Track who last updated it and when
+    last_updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('master_ro', 'bulan')
+
+    def __str__(self):
+        return f"RO {self.master_ro.kode_ro} - Bulan {self.bulan}"
