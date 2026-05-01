@@ -72,6 +72,28 @@
     }
     .viewer-btn svg { transition: transform 0.25s; }
     .viewer-btn:hover svg { transform: scale(1.1); }
+
+    /* Tooltip Bubble */
+    .pikas-tooltip-wrapper { position: relative; display: inline-flex; align-items: center; }
+    .pikas-tooltip { 
+        visibility: hidden; width: 240px; background: rgba(15, 23, 42, 0.98); color: #fff; 
+        text-align: left; border-radius: 10px; padding: 12px; position: absolute; z-index: 100; 
+        bottom: 135%; left: 50%; transform: translateX(-50%); opacity: 0; transition: all 0.3s; 
+        border: 1px solid rgba(168, 85, 247, 0.4); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); 
+        font-size: 11px; font-weight: 500; line-height: 1.5; white-space: normal; pointer-events: none;
+    }
+    .pikas-tooltip::after { 
+        content: ""; position: absolute; top: 100%; left: 50%; margin-left: -6px; 
+        border-width: 6px; border-style: solid; border-color: rgba(168, 85, 247, 0.4) transparent transparent transparent; 
+    }
+    .pikas-tooltip-wrapper:hover .pikas-tooltip { visibility: visible; opacity: 1; bottom: 125%; }
+    .info-i-btn { 
+        width: 24px; height: 24px; border-radius: 50%; border: 1px solid rgba(148,163,184,0.3); 
+        background: rgba(148,163,184,0.1); color: #94a3b8; display: flex; align-items: center; 
+        justify-content: center; font-size: 11px; font-weight: 900; font-family: serif; font-style: italic; 
+        cursor: help; transition: all 0.2s; 
+    }
+    .info-i-btn:hover { background: rgba(168, 85, 247, 0.2); border-color: rgba(168, 85, 247, 0.5); color: #c084fc; }
 </style>
 
 <!-- Layout Master-Detail -->
@@ -271,6 +293,13 @@
                             <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                             BUKTI TL PERIODE LALU
                         </button>
+                        <div class="pikas-tooltip-wrapper" style="margin-left:4px;">
+                            <div class="info-i-btn">i</div>
+                            <div class="pikas-tooltip">
+                                <div style="color:#c084fc; font-weight:900; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">RTL Periode Lalu:</div>
+                                {{ entry.previous_rtl|default:"Tidak ada catatan RTL periode lalu." }}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

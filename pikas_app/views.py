@@ -13,6 +13,27 @@ def get_active_config():
     return AppConfig.objects.select_related('active_periode').first()
 
 
+def attach_previous_rtl(entries, periode):
+    """Efisiensi: Menarik semua RTL periode sebelumnya sekaligus untuk daftar entry."""
+    prev_q = periode.triwulan - 1
+    prev_y = periode.tahun
+    if prev_q < 1:
+        prev_q = 4
+        prev_y -= 1
+    
+    try:
+        prev_periode = PeriodeKertasKerja.objects.get(tahun=prev_y, triwulan=prev_q)
+        prev_entries = FRAEntry.objects.filter(iku__periode=prev_periode).values('iku__kode_indikator', 'rtl')
+        rtl_map = {item['iku__kode_indikator']: item['rtl'] for item in prev_entries}
+        
+        for entry in entries:
+            entry.previous_rtl = rtl_map.get(entry.iku.kode_indikator, "")
+    except PeriodeKertasKerja.DoesNotExist:
+        for entry in entries:
+            entry.previous_rtl = ""
+    return entries
+
+
 # ============================================================
 # AUTH
 # ============================================================
@@ -89,6 +110,10 @@ def dashboard_review_view(request, entry_id):
     entries = FRAEntry.objects.filter(
         iku__periode=periode
     ).select_related('iku', 'pic_tim_kerja').order_by('iku__kode_indikator')
+    
+    # Attach previous RTL
+    attach_previous_rtl(entries, periode)
+    
     total = entries.count()
     done = entries.filter(is_done=True).count()
     
@@ -208,6 +233,10 @@ def periode_review_view(request, periode_id):
     entries = FRAEntry.objects.filter(
         iku__periode=periode
     ).select_related('iku', 'pic_tim_kerja').order_by('iku__kode_indikator')
+    
+    # Attach previous RTL
+    attach_previous_rtl(entries, periode)
+    
     total = entries.count()
     done = entries.filter(is_done=True).count()
     return render(request, 'periode_review.html', {
@@ -447,25 +476,20 @@ def operator_workspace_view(request, iku_id):
     if request.user.role == 'OPERATOR':
         qs = qs.filter(pic_tim_kerja=request.user)
 
+    # Attach previous RTL to all entries in context
+    attach_previous_rtl(qs, periode)
+
     total_iku = qs.count()
     done_iku = qs.filter(is_done=True).count()
 
-    # Auto-Populate: Get previous RTL
-    previous_rtl = ""
-    prev_q = periode.triwulan - 1
-    prev_y = periode.tahun
-    if prev_q < 1:
-        prev_q = 4
-        prev_y -= 1
-    try:
-        prev_periode = PeriodeKertasKerja.objects.get(tahun=prev_y, triwulan=prev_q)
-        prev_iku = MasterIKU.objects.filter(periode=prev_periode, kode_indikator=iku.kode_indikator).first()
-        if prev_iku:
-            prev_entry = FRAEntry.objects.filter(iku=prev_iku).first()
-            if prev_entry:
-                previous_rtl = prev_entry.rtl or ""
-    except PeriodeKertasKerja.DoesNotExist:
-        pass
+    # Find the previous_rtl specifically for the target entry (for backward compatibility if needed)
+    current_target_entry = None
+    for entry in qs:
+        if entry.id == target_entry.id:
+            current_target_entry = entry
+            break
+    
+    previous_rtl = current_target_entry.previous_rtl if current_target_entry else ""
 
     return render(request, 'iku_workspace.html', {
         'periode': periode,
