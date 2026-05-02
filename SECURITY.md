@@ -8,7 +8,7 @@ Jika Anda menemukan celah keamanan pada perangkat lunak PIKAS, **jangan** melapo
 
 Laporkan kerentanan keamanan secara bertanggung jawab (*responsible disclosure*) dengan menghubungi pemilik secara langsung melalui profil GitHub:
 
-**https://github.com/ilhamrizanto**
+**https://github.com/rizanto**
 
 Sertakan informasi berikut dalam laporan Anda:
 - Deskripsi singkat dan jelas tentang kerentanan
