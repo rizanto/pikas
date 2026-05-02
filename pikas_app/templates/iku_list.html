@@ -84,7 +84,9 @@
                         <span style="font-size:9px; font-weight:800; color:#ef4444; margin-top:6px; margin-left:8px; display:inline-block; text-transform:uppercase; letter-spacing:0.5px;">🔒 Dikunci</span>
                         {% endif %}
                     </td>
-                    <td style="padding:14px 16px; vertical-align:top; font-size:12px; font-weight:700; color:#cbd5e1;">{{ entry.pic_tim_kerja.username|default:"—" }}</td>
+                    <td style="padding:14px 16px; vertical-align:top; font-size:12px; font-weight:700; color:#cbd5e1;">
+                        {% if entry.pic_tim_kerja %}{{ entry.pic_tim_kerja.first_name|default:entry.pic_tim_kerja.username }}{% else %}—{% endif %}
+                    </td>
                     <td style="padding:14px 16px; vertical-align:top;">
                         <div style="font-size:13px; font-weight:800; color:#f1f5f9;">R: {{ entry.realisasi|default:"-" }}</div>
                         {% if entry.iku.has_proxy %}
