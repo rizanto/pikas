@@ -1,3 +1,11 @@
+# =============================================================================
+# PIKAS — Performance Indicators Knowledgebase Accountability System
+# File    : urls.py
+# Author  : Ilham Rizanto
+# Copyright (c) 2026 Ilham Rizanto. All Rights Reserved.
+# Unauthorized use, reproduction, or distribution is strictly prohibited.
+# See LICENSE file for full terms.
+# =============================================================================
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views

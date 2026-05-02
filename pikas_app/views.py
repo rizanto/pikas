@@ -1,3 +1,11 @@
+# =============================================================================
+# PIKAS — Performance Indicators Knowledgebase Accountability System
+# File    : views.py
+# Author  : Ilham Rizanto
+# Copyright (c) 2026 Ilham Rizanto. All Rights Reserved.
+# Unauthorized use, reproduction, or distribution is strictly prohibited.
+# See LICENSE file for full terms.
+# =============================================================================
 import json
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse

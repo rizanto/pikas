@@ -1,4 +1,9 @@
-# Django
+# =======================================================
+# PIKAS — .gitignore
+# Copyright (c) 2026 Ilham Rizanto. All Rights Reserved.
+# =======================================================
+
+# ─── Django ───────────────────────────────────────────
 *.log
 local_settings.py
 db.sqlite3
@@ -7,20 +12,22 @@ media/
 static_collected/
 staticfiles/
 
-# Google API
+# ─── SENSITIF — Jangan pernah commit file ini ─────────
+.env
 service_account.json
+*.json.bak
 
-# OS files
-.DS_Store
-Thumbs.db
+# ─── Data mapping produksi (simpan di luar repo) ──────
+# Uncomment baris di bawah jika ingin exclude file ini:
+# mapping.json
+# ro-mapping.json
 
-# Python
+# ─── Python ───────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-env/
 build/
 develop-eggs/
 dist/
@@ -38,8 +45,7 @@ wheels/
 *.egg
 MANIFEST
 
-# Environments
-.env
+# ─── Virtual Environments ─────────────────────────────
 .venv
 env/
 venv/
@@ -47,8 +53,20 @@ ENV/
 env.bak/
 venv.bak/
 
-# IDEs
+# ─── OS Files ─────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── IDEs ─────────────────────────────────────────────
 .vscode/
 .idea/
 *.swp
 *.swo
+
+# ─── File Sementara ───────────────────────────────────
+*.tmp
+*.bak
+append_views.py
+extract.py
+developer_guide.md

@@ -1,3 +1,11 @@
+# =============================================================================
+# PIKAS — Performance Indicators Knowledgebase Accountability System
+# File    : decorators.py
+# Author  : Ilham Rizanto
+# Copyright (c) 2026 Ilham Rizanto. All Rights Reserved.
+# Unauthorized use, reproduction, or distribution is strictly prohibited.
+# See LICENSE file for full terms.
+# =============================================================================
 from django.http import HttpResponseForbidden
 from django.shortcuts import redirect
 from functools import wraps

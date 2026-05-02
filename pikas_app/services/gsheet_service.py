@@ -1,3 +1,11 @@
+# =============================================================================
+# PIKAS — Performance Indicators Knowledgebase Accountability System
+# File    : services/gsheet_service.py
+# Author  : Ilham Rizanto
+# Copyright (c) 2026 Ilham Rizanto. All Rights Reserved.
+# Unauthorized use, reproduction, or distribution is strictly prohibited.
+# See LICENSE file for full terms.
+# =============================================================================
 import re
 import gspread
 from django.conf import settings
