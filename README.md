@@ -20,6 +20,35 @@ Sistem manajemen kinerja terintegrasi berbasis web untuk monitoring IKU, pengisi
 
 Proses pelaporan kinerja di lingkungan instansi pemerintah seringkali tersebar di berbagai platform — spreadsheet, email, folder drive — sehingga mempersulit koordinasi, validasi, dan pelaporan tepat waktu. **PIKAS** hadir sebagai solusi terpadu yang menyatukan seluruh alur kerja pelaporan kinerja dalam satu antarmuka yang modern, aman, dan dapat diaudit.
 
+## 🖼️ Preview Aplikasi
+
+Berikut adalah gambaran antarmuka PIKAS yang modern dan intuitif:
+
+<div align="center">
+  <table>
+    <tr>
+      <td width="50%">
+        <p align="center"><b>Dashboard Monitoring</b></p>
+        <img src="docs/screenshots/dashboard.png" alt="Dashboard Monitoring">
+      </td>
+      <td width="50%">
+        <p align="center"><b>Workspace Operator</b></p>
+        <img src="docs/screenshots/workspace.png" alt="Workspace Operator">
+      </td>
+    </tr>
+    <tr>
+      <td width="50%">
+        <p align="center"><b>Review Pimpinan</b></p>
+        <img src="docs/screenshots/review.png" alt="Review Pimpinan">
+      </td>
+      <td width="50%">
+        <p align="center"><b>Manajemen RCO</b></p>
+        <img src="docs/screenshots/management.png" alt="Manajemen RCO">
+      </td>
+    </tr>
+  </table>
+</div>
+
 ## ✨ Fitur Utama
 
 | Fitur | Deskripsi |
