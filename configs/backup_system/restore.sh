@@ -175,6 +175,8 @@ elif [ "$DB_TYPE" == "postgres" ]; then
     echo "Restoring PostgreSQL database dump..."
     DATABASE_URL=$(grep DATABASE_URL "$RESTORE_WORK_DIR/.env" | cut -d'=' -f2- | tr -d '\r')
     DOCKER_NETWORK=$(docker inspect $CONTAINER_NAME --format '{{range $k,$v := .NetworkSettings.Networks}}{{$k}}{{end}}' | head -n 1)
+    echo "Wiping target database public schema to prevent conflicts..."
+    docker run --rm --network "$DOCKER_NETWORK" postgres:alpine psql "$DATABASE_URL" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
     echo "Running psql restore using temporary postgres container on network $DOCKER_NETWORK..."
     docker run --rm -i --network "$DOCKER_NETWORK" postgres:alpine psql "$DATABASE_URL" < "$RESTORE_WORK_DIR/db_dump.sql"
 fi

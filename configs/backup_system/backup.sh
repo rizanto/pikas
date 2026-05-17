@@ -49,7 +49,7 @@ case $DB_TYPE in
     fi
     DOCKER_NETWORK=$(docker inspect $CONTAINER_NAME --format '{{range $k,$v := .NetworkSettings.Networks}}{{$k}}{{end}}' | head -n 1)
     echo "Running pg_dump using temporary postgres container on network $DOCKER_NETWORK..."
-    docker run --rm --network "$DOCKER_NETWORK" postgres:alpine pg_dump "$DATABASE_URL" > "$WORK_DIR/db_dump.sql"
+    docker run --rm --network "$DOCKER_NETWORK" postgres:alpine pg_dump -c --if-exists --no-owner --no-privileges "$DATABASE_URL" > "$WORK_DIR/db_dump.sql"
     ;;
 esac
 

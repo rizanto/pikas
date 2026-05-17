@@ -6,8 +6,8 @@
 # Modify your credentials and system paths here once.
 
 # Telegram Bot Integration
-TG_TOKEN="8731584513:AAG8Po3eDs2BFPyrIWDeA23Pel_tKTZQG6w"
-TG_CHAT_ID="727541374"
+TG_TOKEN="TELEGRAM_BOT_TOKEN"
+TG_CHAT_ID="TELEGRAM_CHAT_ID"
 
 
 # Cloud Storage Integration (Rclone Remote Name)
